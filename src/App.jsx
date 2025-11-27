@@ -10,10 +10,16 @@ const App = () => {
     setSidebarToggle(!sidebarToggle)
   }
   
+  // Conditionally set the class for the main content area
+  // If sidebarToggle is false (off), add the 'full-width' class.
+  const mainContentClass = sidebarToggle ? "main-content" : "main-content full-width";
+  
   return (
     <div className="app-container">
-      <Sidebar status={sidebarToggle} />
-      <div className="main-content">
+      {/* Pass the status to Sidebar component */}
+      <Sidebar status={sidebarToggle} /> 
+      
+      <div className={mainContentClass}>
         <Header onSidebarToggle={toggleSidebar} />
         <div className="content-area">
           <div className="content-placeholder">Contents here</div>
@@ -23,4 +29,4 @@ const App = () => {
   )
 }
 
-export default App
+export default App;

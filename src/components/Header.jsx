@@ -30,7 +30,7 @@ function Header({ onSidebarToggle }) {
           <span className="notification-badge">7</span>
         </div>
         
-        <div className="user-avatar">KR</div>
+        <div className="user-avatar">DFC</div>
       </div>
     </div>
   );
