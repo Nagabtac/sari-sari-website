@@ -211,21 +211,21 @@ body {
   color: #6c757d;
 }
 
-/* --- Responsive adjustments --- */
+
 @media (max-width: 768px) {
   .sidebar {
     width: 200px;
   }
   
   .sidebar.sidebar-closed {
-    left: -200px; /* Adjust left offset for mobile width */
+    left: -200px; 
   }
 
   .main-content {
     margin-left: 200px;
   }
   
-  /* Ensure full-width works on mobile too */
+
   .main-content.full-width {
     margin-left: 0;
   }
