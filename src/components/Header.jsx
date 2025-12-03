@@ -16,7 +16,7 @@ function Header({ toggleSidebar }) {
         </button>
 
 
-        <h1 className="text-2xl font-bold text-gray-800">FrozenPOS</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Sari-Sari Senpai</h1>
       </div>
 
 
