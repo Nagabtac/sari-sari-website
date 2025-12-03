@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Car List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f7f7f7;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            font-weight: normal;
+            margin-bottom: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            border-bottom: 2px solid #ddd;
+            background: #f0f0f0;
+        }
+        tr:nth-child(even) {
+            background: #fafafa;
+        }
+        a.button {
+            display: inline-block;
+            padding: 8px 14px;
+            background: #007bff;
+            color: white;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        a.button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Car List</h1>
+
+    <table>
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Plate</th>
+            <th>Make</th>
+            <th>Model</th>
+            <th>Year</th>
+            <th>Color</th>
+            <th>Body</th>
+            <th>Engine</th>
+            <th>Transmission</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="car : ${cars}">
+            <td th:text="${car.carId}"></td>
+            <td th:text="${car.licensePlateNumber}"></td>
+            <td th:text="${car.make}"></td>
+            <td th:text="${car.model}"></td>
+            <td th:text="${car.year}"></td>
+            <td th:text="${car.color}"></td>
+            <td th:text="${car.bodyType}"></td>
+            <td th:text="${car.engineType}"></td>
+            <td th:text="${car.transmission}"></td>
+        </tr>
+        </tbody>
+    </table>
+
+    <a href="/new" class="button">+ Add New Car</a>
+</div>
+</body>
+</html>

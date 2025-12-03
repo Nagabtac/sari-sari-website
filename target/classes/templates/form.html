@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Add Car</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f7f7f7;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            font-weight: normal;
+            margin-bottom: 20px;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin: 12px 0 6px;
+        }
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .radio-group {
+            margin: 6px 0 12px;
+        }
+        .radio-group label {
+            font-weight: normal;
+            margin-right: 15px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        a.back {
+            display: inline-block;
+            margin-top: 15px;
+            text-decoration: none;
+            font-size: 14px;
+            color: #555;
+        }
+        a.back:hover {
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Add New Car</h1>
+
+    <form th:action="@{/save}" th:object="${car}" method="post">
+        <!-- Hidden auto-increment ID -->
+        <input type="hidden" th:field="*{carId}" />
+
+        <!-- License Plate -->
+        <label>License Plate</label>
+        <input type="text" th:field="*{licensePlateNumber}" required/>
+
+        <!-- Make -->
+        <label>Make</label>
+        <div class="radio-group">
+            <label><input type="radio" th:field="*{make}" value="Toyota"/> Toyota</label>
+            <label><input type="radio" th:field="*{make}" value="Ford"/> Ford</label>
+            <label><input type="radio" th:field="*{make}" value="Honda"/> Honda</label>
+            <label><input type="radio" th:field="*{make}" value="BMW"/> BMW</label>
+        </div>
+
+        <!-- Model -->
+        <label>Model</label>
+        <input type="text" th:field="*{model}" required/>
+
+        <!-- Year -->
+        <label>Year</label>
+        <input type="number" th:field="*{year}" required/>
+
+        <!-- Color -->
+        <label>Color</label>
+        <input type="text" th:field="*{color}"/>
+
+        <!-- Body Type -->
+        <label>Body Type</label>
+        <div class="radio-group">
+            <label><input type="radio" th:field="*{bodyType}" value="Sedan"/> Sedan</label>
+            <label><input type="radio" th:field="*{bodyType}" value="SUV"/> SUV</label>
+            <label><input type="radio" th:field="*{bodyType}" value="Hatchback"/> Hatchback</label>
+        </div>
+
+        <!-- Engine Type -->
+        <label>Engine Type</label>
+        <div class="radio-group">
+            <label><input type="radio" th:field="*{engineType}" value="Gasoline"/> Gasoline</label>
+            <label><input type="radio" th:field="*{engineType}" value="Diesel"/> Diesel</label>
+            <label><input type="radio" th:field="*{engineType}" value="Electric"/> Electric</label>
+            <label><input type="radio" th:field="*{engineType}" value="Hybrid"/> Hybrid</label>
+        </div>
+
+        <!-- Transmission -->
+        <label>Transmission</label>
+        <div class="radio-group">
+            <label><input type="radio" th:field="*{transmission}" value="Automatic"/> Automatic</label>
+            <label><input type="radio" th:field="*{transmission}" value="Manual"/> Manual</label>
+        </div>
+
+        <button type="submit">Save</button>
+    </form>
+
+    <a href="/" class="back">← Back to List</a>
+</div>
+</body>
+</html>
