@@ -70,8 +70,10 @@ public class SecurityConfig {
                                                                                                            // allowed
                                         auth.requestMatchers(HttpMethod.PUT, "/api/cars/**").permitAll(); // ✅ PUT is
                                                                                                           // now allowed
-                                        auth.requestMatchers(HttpMethod.DELETE, "/api/cars/**").permitAll(); // ✅ DELETE is
-                                                                                                             // now allowed
+                                        auth.requestMatchers(HttpMethod.DELETE, "/api/cars/**").permitAll(); // ✅ DELETE
+                                                                                                             // is
+                                                                                                             // now
+                                                                                                             // allowed
                                         auth.anyRequest().authenticated();
                                 })
                                 .sessionManagement(session -> session
@@ -115,29 +117,35 @@ public class SecurityConfig {
         }
 
         // ✅ 3. Add this new Bean to define your CORS settings
+        // Inside SecurityConfig.java
+
         @Bean
         CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration configuration = new CorsConfiguration();
 
-                // This is the list of frontend URLs that are allowed to make requests
-                // We add both 3000 (for Next.js) and 1000 (for your old HTML file)
-                // Note: When allowCredentials is true, you cannot use "*" - must specify exact origins
+                // ✅ Update this list to include your Vite port (5177)
                 configuration.setAllowedOrigins(List.of(
                                 "http://localhost:3000",
                                 "http://127.0.0.1:3000",
                                 "http://localhost:5500",
                                 "http://127.0.0.1:5500",
                                 "http://localhost:1000",
-                                "http://127.0.0.1:1000"));
+                                "http://127.0.0.1:1000",
+                                "http://localhost:5171",
+                                "http://localhost:5172",
+                                "http://localhost:5173",
+                                "http://localhost:5174",
+                                "http://localhost:5175",
+                                "http://localhost:5176",
+                                "http://localhost:5177" // <--- ADD THIS LINE
+                ));
 
                 configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                 configuration.setAllowedHeaders(List.of("*"));
                 configuration.setAllowCredentials(true);
-                configuration.setMaxAge(3600L); // Cache preflight response for 1 hour
+                configuration.setMaxAge(3600L);
 
                 UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-
-                // ✅ 4. Apply these settings to all routes under /api/**
                 source.registerCorsConfiguration("/api/**", configuration);
 
                 return source;
