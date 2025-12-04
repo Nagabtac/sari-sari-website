@@ -1,9 +1,20 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
-function Sidebar({ menuItems, isOpen, toggleSidebar }) {
+function Sidebar({ menuItems, isOpen, toggleSidebar, onLogout }) {
+  const navigate = useNavigate();
+
+  const handleItemClick = (item) => {
+    if (item.link === "/logout" && onLogout) {
+      onLogout();
+    } else {
+      navigate(item.link);
+    }
+    toggleSidebar(); // Close sidebar after navigation
+  };
+
   return (
     <>
-
       <aside
         className={`fixed top-0 left-0 h-full w-64 bg-white shadow-xl z-40 transform transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "-translate-x-full"
@@ -21,14 +32,14 @@ function Sidebar({ menuItems, isOpen, toggleSidebar }) {
 
         <nav className="p-5 space-y-4">
           {menuItems.map((item, idx) => (
-            <a
+            <button
               key={idx}
-              href={item.link}
-              className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2 transition-colors"
+              onClick={() => handleItemClick(item)}
+              className="w-full flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2 transition-colors text-left"
             >
               <span>{item.icon}</span>
               <span className="font-medium">{item.text}</span>
-            </a>
+            </button>
           ))}
         </nav>
       </aside>
