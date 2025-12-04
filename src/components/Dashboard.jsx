@@ -63,6 +63,7 @@ function Dashboard() {
     navigate("/login");
   };
 
+  
   const menuItems = [
     { text: "Home", link: "/", icon: "🏠" },
     { text: "Profile", link: "/profile", icon: "👤" },
