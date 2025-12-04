@@ -1,11 +1,11 @@
 package myuniquesite.blerp.exception;
 
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -30,6 +30,30 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleResourceNotFound(ResourceNotFoundException ex) {
         ApiError apiError = new ApiError("Resource Not Found", ex.getMessage());
         return new ResponseEntity<>(apiError, HttpStatus.NOT_FOUND);
+    }
+
+    /**
+     * Handles DataIntegrityViolationException, typically caused by foreign key constraints.
+     * Returns a 409 Conflict response with a user-friendly message.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ResponseBody
+    public ResponseEntity<ApiError> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        String message = "Cannot delete this product because it is being used in other records (e.g., orders, sales, transactions). Please remove all references first.";
+        
+        // Check if the exception message contains more specific information
+        String exceptionMessage = ex.getMessage();
+        if (exceptionMessage != null && exceptionMessage.contains("foreign key")) {
+            message = "Cannot delete this product because it is referenced by other records. Please remove all references to this product first.";
+        }
+        
+        ApiError apiError = new ApiError(
+            "Data Integrity Violation",
+            message
+        );
+        
+        return new ResponseEntity<>(apiError, HttpStatus.CONFLICT);
     }
     
     /**

@@ -63,17 +63,17 @@ public class SecurityConfig {
                                         auth.requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll(); // Keeps
                                                                                                          // OPTIONS open
                                         auth.requestMatchers("/api/login", "/api/register").permitAll();
-                                        auth.requestMatchers(HttpMethod.GET, "/api/cars/**").permitAll(); // GET is
-                                                                                                          // allowed
-                                        auth.requestMatchers(HttpMethod.POST, "/api/cars/**").permitAll(); // ✅ POST is
-                                                                                                           // now
-                                                                                                           // allowed
-                                        auth.requestMatchers(HttpMethod.PUT, "/api/cars/**").permitAll(); // ✅ PUT is
-                                                                                                          // now allowed
-                                        auth.requestMatchers(HttpMethod.DELETE, "/api/cars/**").permitAll(); // ✅ DELETE
-                                                                                                             // is
-                                                                                                             // now
-                                                                                                             // allowed
+                                        auth.requestMatchers(HttpMethod.GET, "/api/products/**").permitAll(); // GET is
+                                                                                                               // allowed
+                                        auth.requestMatchers(HttpMethod.POST, "/api/products/**").permitAll(); // ✅ POST is
+                                                                                                                // now
+                                                                                                                // allowed
+                                        auth.requestMatchers(HttpMethod.PUT, "/api/products/**").permitAll(); // ✅ PUT is
+                                                                                                               // now allowed
+                                        auth.requestMatchers(HttpMethod.DELETE, "/api/products/**").permitAll(); // ✅ DELETE
+                                                                                                                  // is
+                                                                                                                  // now
+                                                                                                                  // allowed
                                         auth.anyRequest().authenticated();
                                 })
                                 .sessionManagement(session -> session
