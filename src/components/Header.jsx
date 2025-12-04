@@ -1,6 +1,6 @@
 import React from "react";
 
-function Header({ toggleSidebar }) {
+function Header({ toggleSidebar, searchValue, onSearchChange }) {
   return (
     <header className="bg-white shadow-md py-3 relative flex items-center px-6">
 
@@ -23,7 +23,9 @@ function Header({ toggleSidebar }) {
       <div className="absolute left-1/2 transform -translate-x-1/2">
         <input
           type="text"
-          placeholder="Search..."
+          placeholder="Search products..."
+          value={searchValue || ""}
+          onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
           className="w-64 px-3 py-2 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
         />
       </div>
