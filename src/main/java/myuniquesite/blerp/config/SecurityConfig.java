@@ -10,7 +10,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
@@ -23,6 +22,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.RequestMatcher;
+import jakarta.servlet.http.HttpServletRequest;
 
 import myuniquesite.blerp.config.JwtAuthenticationFilter;
 
@@ -60,36 +61,38 @@ public class SecurityConfig {
                                 .cors(withDefaults()) // ✅ 2. Enable CORS configuration for the API
                                 .csrf(csrf -> csrf.disable())
                                 .authorizeHttpRequests(auth -> {
-                                        auth.requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll(); // Keeps
-                                                                                                         // OPTIONS open
-                                        auth.requestMatchers("/api/login", "/api/register").permitAll();
-                                        auth.requestMatchers(HttpMethod.GET, "/api/products/**").permitAll(); // GET is
-                                                                                                               // allowed
-                                        auth.requestMatchers(HttpMethod.POST, "/api/products/**").permitAll(); // ✅ POST is
-                                                                                                                // now
-                                                                                                                // allowed
-                                        auth.requestMatchers(HttpMethod.PUT, "/api/products/**").permitAll(); // ✅ PUT is
-                                                                                                               // now allowed
-                                        auth.requestMatchers(HttpMethod.DELETE, "/api/products/**").permitAll(); // ✅ DELETE
-                                                                                                                  // is
-                                                                                                                  // now
-                                                                                                                  // allowed
-                                        auth.anyRequest().authenticated();
+                                        // Permit all API endpoints - no authentication required
+                                        auth.requestMatchers("/api/**").permitAll();
+                                        auth.anyRequest().permitAll();
                                 })
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                                 .exceptionHandling(ex -> ex
                                                 .authenticationEntryPoint(
-                                                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+                                                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                                                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                                                        response.setStatus(HttpStatus.FORBIDDEN.value());
+                                                }))
+                                // Explicitly disable all redirect mechanisms for API endpoints
+                                .formLogin(form -> form.disable())
+                                .httpBasic(basic -> basic.disable())
+                                .logout(logout -> logout.disable())
                                 .build();
         }
 
         @Bean
         @Order(2)
         public SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
+                // Exclude /api/** from web security filter chain to prevent redirect loops
+                // Only process requests that are NOT under /api/**
+                RequestMatcher notApiMatcher = (HttpServletRequest request) -> {
+                        String path = request.getRequestURI();
+                        return !path.startsWith("/api/");
+                };
                 return http
-                                .securityMatcher("/**")
+                                .securityMatcher(notApiMatcher)
+                                .cors(withDefaults()) // ✅ Enable CORS for web security filter chain too
                                 .csrf(csrf -> csrf
                                                 .ignoringRequestMatchers("/api/**"))
                                 .authorizeHttpRequests(auth -> {
@@ -147,6 +150,8 @@ public class SecurityConfig {
 
                 UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
                 source.registerCorsConfiguration("/api/**", configuration);
+                source.registerCorsConfiguration("/login", configuration); // ✅ Also register for /login endpoint
+                source.registerCorsConfiguration("/**", configuration); // ✅ Register for all paths to handle redirects
 
                 return source;
         }
