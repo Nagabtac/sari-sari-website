@@ -16,7 +16,7 @@ function Sidebar({ menuItems, isOpen, toggleSidebar, onLogout }) {
   return (
     <>
       <aside
-        className={`fixed top-0 left-0 h-full w-64 bg-black shadow-xl z-40 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 left-0 h-full w-64 bg-green-700 shadow-xl z-40 transform transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -29,7 +29,7 @@ function Sidebar({ menuItems, isOpen, toggleSidebar, onLogout }) {
             <button
               key={idx}
               onClick={() => handleItemClick(item)}
-              className="w-full flex items-center space-x-3 text-white hover:bg-gray-500 rounded-lg p-2 transition-colors text-left text-white"
+              className="w-full flex items-center space-x-3 text-white hover:bg-blue-700 rounded-lg p-2 transition-colors text-left text-white"
             >
               <span>{item.icon}</span>
               <span className="font-medium">{item.text}</span>

@@ -27,7 +27,12 @@ function Header({ toggleSidebar, searchValue, onSearchChange, onLogout }) {
           <span className="block w-full h-1 bg-gray-800 rounded-full"></span>
         </button>
 
-        <h1 className="text-2xl font-bold text-gray-800">Sari-Sari Senpai</h1>
+        <h1 
+          onClick={() => navigate("/")}
+          className="text-2xl font-bold text-gray-800 cursor-pointer hover:text-green-700 transition-colors"
+        >
+          Sari-Sari Senpai
+        </h1>
       </div>
 
       {/* RIGHT SECTION: Search + Bell + Avatar + Logout */}
@@ -40,7 +45,7 @@ function Header({ toggleSidebar, searchValue, onSearchChange, onLogout }) {
           value={searchValue || ""}
           onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
           className="w-64 px-3 py-2 rounded-lg border border-gray-300 shadow-sm 
-          focus:outline-none focus:ring-2 focus:ring-sky-400"
+          focus:outline-none focus:ring-2 focus:ring-green-700 "
         />
 
         {/* Notification Bell */}
