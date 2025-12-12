@@ -28,7 +28,8 @@ function StoreCreditList() {
 
   const initialFormState = {
     paymentId: null,
-    customer_name: "",        // UPDATED
+    fname: "",
+    lname: "",
     amount: "",
     balance: "",
     amount_date: "",
@@ -97,14 +98,16 @@ function StoreCreditList() {
 
   const openEditModal = (payment) => {
     setFormData({
-      paymentId: payment.payment_id,
-      customer_name: payment.customer_name || "-",     // UPDATED
+      paymentId: payment.paymentId,
+      customer_name: payment.customer_name || "-",
+      fname: payment.fname || "", // Might not be returned in list but good to keep safe
+      lname: payment.lname || "",
       amount: payment.amount || "",
       balance: payment.balance || "",
-      amount_date: payment.amount_date || "",
-      pay_date: payment.pay_date || "",
+      amount_date: "", // Removed from display but kept in state if needed
+      pay_date: payment.payDate || "",
       method: payment.method || "",
-      status: payment.status || "full_balance"
+      status: payment.status || "FULL_BALANCE"
     });
     setIsEditing(true);
     setIsModalOpen(true);
@@ -125,7 +128,9 @@ function StoreCreditList() {
       : `${baseUrl}/api/new`;
 
     const payload = {
-      customer_name: formData.customer_name, // UPDATED
+      fname: formData.fname,
+      lname: formData.lname,
+      customer_name: `${formData.fname} ${formData.lname}`,
       amount: parseFloat(formData.amount),
       balance: parseFloat(formData.balance),
       amount_date: formData.amount_date,
@@ -171,7 +176,7 @@ function StoreCreditList() {
       <Sidebar menuItems={menuItems} isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} onLogout={handleLogout} />
 
       <div className={`flex-1 flex flex-col overflow-hidden transition-all ${isSidebarOpen ? "ml-64" : "ml-0"}`}>
-        <Header toggleSidebar={toggleSidebar} searchValue="" onSearchChange={() => {}} />
+        <Header toggleSidebar={toggleSidebar} searchValue="" onSearchChange={() => { }} />
 
         <main className="flex-1 p-6 overflow-auto">
           <div className="flex justify-between items-center mb-6">
@@ -190,10 +195,10 @@ function StoreCreditList() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="py-4 px-6 text-left">Payment ID</th>
-                  <th className="py-4 px-6 text-left">Customer Name</th> {/* UPDATED */}
+                  <th className="py-4 px-6 text-left">Customer Name</th>
                   <th className="py-4 px-6 text-left">Amount</th>
                   <th className="py-4 px-6 text-left">Balance</th>
-                  <th className="py-4 px-6 text-left">Amount Date</th>
+                  {/* <th className="py-4 px-6 text-left">Amount Date</th>  Removed per request */}
                   <th className="py-4 px-6 text-left">Pay Date</th>
                   <th className="py-4 px-6 text-left">Method</th>
                   <th className="py-4 px-6 text-left">Status</th>
@@ -202,19 +207,19 @@ function StoreCreditList() {
               </thead>
               <tbody>
                 {payments.map((p) => (
-                  <tr key={p.payment_id} className="hover:bg-blue-50">
-                    <td className="py-4 px-6">{p.payment_id}</td>
-                    <td className="py-4 px-6">{p.customer_name || "-"}</td> {/* UPDATED */}
+                  <tr key={p.paymentId} className="hover:bg-blue-50">
+                    <td className="py-4 px-6">{p.paymentId}</td>
+                    <td className="py-4 px-6">{p.customerName || "-"}</td>
                     <td className="py-4 px-6">{formatCurrency(p.amount)}</td>
                     <td className="py-4 px-6">{formatCurrency(p.balance)}</td>
-                    <td className="py-4 px-6">{formatDate(p.amount_date)}</td>
-                    <td className="py-4 px-6">{formatDate(p.pay_date)}</td>
+                    {/* <td className="py-4 px-6">{formatDate(p.amount_date)}</td> Removed */}
+                    <td className="py-4 px-6">{formatDate(p.payDate)}</td>
                     <td className="py-4 px-6">{p.method}</td>
                     <td className="py-4 px-6">{p.status}</td>
                     <td className="py-4 px-6 text-center">
                       <button className="text-indigo-600" onClick={() => openEditModal(p)}>Edit</button>
                       <span className="mx-2">|</span>
-                      <button className="text-red-600" onClick={() => handleDelete(p.payment_id)}>Delete</button>
+                      <button className="text-red-600" onClick={() => handleDelete(p.paymentId)}>Delete</button>
                     </td>
                   </tr>
                 ))}
@@ -231,12 +236,24 @@ function StoreCreditList() {
             <h3 className="text-xl font-bold mb-4">{isEditing ? "Edit Payment" : "New Utang"}</h3>
 
             <form onSubmit={handleSave} className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">
-                <label className="block mb-1">Customer Name</label>
+              <div>
+                <label className="block mb-1">First Name</label>
                 <input
                   type="text"
-                  name="customer_name"
-                  value={formData.customer_name}
+                  name="fname"
+                  value={formData.fname}
+                  onChange={handleInputChange}
+                  className="border p-2 rounded w-full"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1">Last Name</label>
+                <input
+                  type="text"
+                  name="lname"
+                  value={formData.lname}
                   onChange={handleInputChange}
                   className="border p-2 rounded w-full"
                   required

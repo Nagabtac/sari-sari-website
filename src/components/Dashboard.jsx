@@ -18,12 +18,13 @@ function Dashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [totalProducts, setTotalProducts] = useState(0);
   const [totalSales, setTotalSales] = useState(0);
+  const [totalUtang, setTotalUtang] = useState(0);
   const [calculatorValue, setCalculatorValue] = useState("0");
   const [calculatorHistory, setCalculatorHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { logout, token } = useAuth();
-  
+
   // Ensure API_URL doesn't already include /api path
   let baseUrl = API_URL;
   if (baseUrl.includes('/api/')) {
@@ -32,34 +33,57 @@ function Dashboard() {
   baseUrl = baseUrl.replace(/\/+$/, '');
   const PRODUCTS_API = `${baseUrl}/api/products`;
   const SALES_API = `${baseUrl}/api/sales`;
+  const UTANG_API = `${baseUrl}/api/store-credit-list`;
 
-  useEffect(() => { 
+  useEffect(() => {
     if (token) {
       fetchTotalProducts();
       loadCalculatorHistory();
       fetchSales();
+      fetchUtang();
     }
   }, [token]);
 
-  const nowIso = () => new Date().toISOString();
+  // Return local ISO string format (YYYY-MM-DDTHH:mm:ss) without 'Z' to match backend LocalDateTime
+  const nowIso = () => {
+    const now = new Date();
+    const offsetMs = now.getTimezoneOffset() * 60 * 1000;
+    const localTime = new Date(now.getTime() - offsetMs);
+    return localTime.toISOString().slice(0, 19);
+  };
 
   const fetchTotalProducts = async () => {
     try {
       const res = await fetch(PRODUCTS_API, {
         headers: getHeaders(token)
       });
-      
+
       if (res.ok) {
-      const data = await res.json();
-      const productsArray = Array.isArray(data) 
-        ? data 
-        : (data.products || data.data || []);
+        const data = await res.json();
+        const productsArray = Array.isArray(data)
+          ? data
+          : (data.products || data.data || []);
         setTotalProducts(productsArray.length);
       }
     } catch (err) {
       console.error("Error fetching products:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+
+  const fetchUtang = async () => {
+    try {
+      const res = await fetch(UTANG_API, { headers: getHeaders(token) });
+      if (res.ok) {
+        const data = await res.json();
+        // Assuming data is an array of maps/payments
+        const list = Array.isArray(data) ? data : (data.payments || []);
+        setTotalUtang(list.length);
+      }
+    } catch (err) {
+      console.error("Error fetching utang:", err);
     }
   };
 
@@ -75,19 +99,19 @@ function Dashboard() {
       const res = await fetch(SALES_API, {
         headers: getHeaders(token)
       });
-      
+
       if (res.ok) {
         const data = await res.json();
-        const salesArray = Array.isArray(data) 
-          ? data 
+        const salesArray = Array.isArray(data)
+          ? data
           : (data.sales || data.data || []);
-        
+
         // Calculate total sales from all sales records
         const total = salesArray.reduce((sum, sale) => {
           const amount = parseFloat(sale.amount || 0);
           return sum + amount;
         }, 0);
-        
+
         setTotalSales(total);
       } else {
         console.error("Error fetching sales:", res.status, res.statusText);
@@ -104,8 +128,8 @@ function Dashboard() {
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   const handleLogout = () => {
-        logout();
-        navigate("/login");
+    logout();
+    navigate("/login");
   };
 
   const handleCalculatorInput = (value) => {
@@ -159,7 +183,7 @@ function Dashboard() {
       if (res.ok) {
         const newSale = await res.json();
         console.log("Sale saved successfully:", newSale);
-        
+
         // Refresh sales to get updated total
         await fetchSales();
       } else {
@@ -198,7 +222,7 @@ function Dashboard() {
         const newSale = await res.json();
         console.log("Sale saved successfully:", newSale);
         alert(`Total sales of ₱${totalSales.toFixed(2)} has been saved to the database.`);
-        
+
         // Don't refresh here - the total already includes all sales from database
         // Refreshing would double-count since we just saved the total as a new sale
         // If you want to see the updated list, manually refresh the page
@@ -230,8 +254,8 @@ function Dashboard() {
 
       if (res.ok) {
         const data = await res.json();
-        const salesArray = Array.isArray(data) 
-          ? data 
+        const salesArray = Array.isArray(data)
+          ? data
           : (data.sales || data.data || []);
 
         // Delete each sale record
@@ -262,7 +286,7 @@ function Dashboard() {
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden font-sans">
-      
+
       <Sidebar
         menuItems={menuItems}
         isOpen={isSidebarOpen}
@@ -270,15 +294,14 @@ function Dashboard() {
         onLogout={handleLogout}
       />
 
-      <div 
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          isSidebarOpen ? "ml-64" : "ml-0"
-        }`}
+      <div
+        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${isSidebarOpen ? "ml-64" : "ml-0"
+          }`}
       >
-        <Header 
+        <Header
           toggleSidebar={toggleSidebar}
           searchValue=""
-          onSearchChange={() => {}}
+          onSearchChange={() => { }}
         />
 
         <main className="flex-1 p-6 overflow-auto">
@@ -289,16 +312,16 @@ function Dashboard() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div 
+              <div
                 onClick={() => navigate("/products")}
                 className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-shadow"
               >
                 <div className="text-4xl mb-3">📦</div>
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">Products</h3>
                 <p className="text-gray-600">Manage your product inventory</p>
-          </div>
+              </div>
 
-              <div 
+              <div
                 onClick={() => navigate("/store-credit-list")}
                 className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-shadow"
               >
@@ -308,10 +331,16 @@ function Dashboard() {
               </div>
             </div>
 
-            {/* Total Products */}
-            <div className="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">Total Products</h3>
-              <p className="text-3xl font-bold text-blue-600">{loading ? "..." : totalProducts}</p>
+            {/* Total Products & Total Utang */}
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">Total Products</h3>
+                <p className="text-3xl font-bold text-blue-600">{loading ? "..." : totalProducts}</p>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">Total Utang</h3>
+                <p className="text-3xl font-bold text-red-600">{loading ? "..." : totalUtang}</p>
+              </div>
             </div>
 
             {/* Calculator and Sales Section */}
@@ -323,7 +352,7 @@ function Dashboard() {
                   <div className="bg-gray-100 p-4 rounded-lg text-right text-2xl font-mono min-h-[60px] flex items-center justify-end">
                     {calculatorValue}
                   </div>
-            </div>
+                </div>
                 <div className="grid grid-cols-4 gap-2">
                   {["C", "←", "÷", "×"].map((btn) => (
                     <button
@@ -356,38 +385,37 @@ function Dashboard() {
                     <button
                       key={btn}
                       onClick={() => handleCalculatorInput(btn.toString())}
-                      className={`p-4 rounded-lg font-semibold text-lg ${
-                        btn === "="
-                          ? "bg-blue-600 hover:bg-blue-700 text-white col-span-1"
-                          : "bg-gray-100 hover:bg-gray-200"
-                      }`}
+                      className={`p-4 rounded-lg font-semibold text-lg ${btn === "="
+                        ? "bg-blue-600 hover:bg-blue-700 text-white col-span-1"
+                        : "bg-gray-100 hover:bg-gray-200"
+                        }`}
                     >
                       {btn}
                     </button>
                   ))}
                   {[0, "."].map((btn) => (
-            <button 
+                    <button
                       key={btn}
                       onClick={() => handleCalculatorInput(btn.toString())}
                       className="bg-gray-100 hover:bg-gray-200 p-4 rounded-lg font-semibold text-lg"
-            >
+                    >
                       {btn}
-            </button>
+                    </button>
                   ))}
                 </div>
-          </div>
+              </div>
 
               {/* Calculator History and Total Sales */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-xl font-semibold text-gray-800">Calculator History</h3>
-              <button 
+                  <button
                     onClick={clearHistory}
                     className="text-sm text-red-600 hover:text-red-800"
-              >
+                  >
                     Clear
-              </button>
-            </div>
+                  </button>
+                </div>
                 <div className="mb-6 max-h-64 overflow-y-auto space-y-2">
                   {calculatorHistory.length === 0 ? (
                     <p className="text-gray-500 text-sm">No calculations yet</p>
@@ -407,10 +435,10 @@ function Dashboard() {
                         >
                           Add to Sales
                         </button>
-            </div>
+                      </div>
                     ))
                   )}
-      </div>
+                </div>
 
                 <div className="border-t pt-4">
                   <div className="flex justify-between items-center mb-2">
@@ -424,7 +452,7 @@ function Dashboard() {
                     >
                       Reset
                     </button>
-              </div>
+                  </div>
                   <p className="text-3xl font-bold text-green-600 mb-4">₱{totalSales.toFixed(2)}</p>
                   <button
                     onClick={saveTotalSales}
@@ -432,12 +460,12 @@ function Dashboard() {
                   >
                     Save Sales
                   </button>
+                </div>
               </div>
-              </div>
-              </div>
-              </div>
-        </main>
+            </div>
           </div>
+        </main>
+      </div>
     </div>
   );
 }
