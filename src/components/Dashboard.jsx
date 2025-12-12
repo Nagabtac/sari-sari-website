@@ -248,7 +248,7 @@ function Dashboard() {
   };
 
   const clearSales = async () => {
-    if (!window.confirm("Are you sure you want to reset the sales view? This will set the counter to 0 but keep your data safe.")) {
+    if (!window.confirm("Are you sure you want to reset the sales view?.")) {
       return;
     }
 
@@ -274,7 +274,7 @@ function Dashboard() {
         localStorage.setItem('salesOffset', currentDbTotal.toString());
         setTotalSales(0);
 
-        alert("Sales view has been reset (Database records preserved).");
+        alert("Sales view has been reset.");
       }
     } catch (error) {
       console.error("Error resetting sales:", error);
@@ -286,6 +286,7 @@ function Dashboard() {
     { text: "Home", link: "/", icon: "🏠" },
     { text: "Products", link: "/products", icon: "📦" },
     { text: "Store Credit List", link: "/store-credit-list", icon: "📋" },
+    { text: "Archive", link: "/archive", icon: "🗄️" },
     { text: "Logout", link: "/logout", icon: "🚪" },
   ];
 
@@ -307,12 +308,13 @@ function Dashboard() {
           toggleSidebar={toggleSidebar}
           searchValue=""
           onSearchChange={() => { }}
+          onLogout={handleLogout}
         />
 
         <main className="flex-1 p-6 overflow-auto">
           <div className="max-w-4xl mx-auto">
             <div className="mb-6">
-              <h2 className="text-3xl font-bold text-gray-800">Welcome to Sari-Sari Senpai</h2>
+              <h2 className="text-3xl font-bold text-gray-800">Welcome to Raven Joy Store</h2>
               <p className="text-gray-600 mt-1">Your dashboard</p>
             </div>
 
@@ -333,6 +335,15 @@ function Dashboard() {
                 <div className="text-4xl mb-3">📋</div>
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">Store Credit List</h3>
                 <p className="text-gray-600">View all payment records</p>
+              </div>
+
+              <div
+                onClick={() => navigate("/archive")}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-shadow"
+              >
+                <div className="text-4xl mb-3">🗄️</div>
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">Archive</h3>
+                <p className="text-gray-600">View archived products</p>
               </div>
             </div>
 

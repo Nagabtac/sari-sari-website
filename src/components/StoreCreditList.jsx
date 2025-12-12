@@ -59,6 +59,7 @@ function StoreCreditList() {
     { text: "Home", link: "/", icon: "🏠" },
     { text: "Products", link: "/products", icon: "📦" },
     { text: "Store Credit List", link: "/store-credit-list", icon: "📋" },
+    { text: "Archive", link: "/archive", icon: "🗄️" },
     { text: "Logout", link: "/logout", icon: "🚪" },
   ];
 
@@ -126,8 +127,8 @@ function StoreCreditList() {
       lname: payment.lname || "",
       amount: payment.amount || "",
       balance: payment.balance || "",
-      amount_date: "", // Removed from display but kept in state if needed
-      pay_date: payment.payDate || "",
+      amount_date: "",
+      pay_date: payment.payDate ? payment.payDate.substring(0, 16) : "",
       method: payment.method || "",
       status: payment.status || "FULL_BALANCE"
     });
@@ -156,8 +157,8 @@ function StoreCreditList() {
       customer_name: `${formData.fname} ${formData.lname}`,
       amount: parseFloat(formData.amount),
       balance: parseFloat(formData.balance),
-      amount_date: formData.amount_date,
-      pay_date: formData.pay_date,
+      amount_date: formData.amount_date ? formData.amount_date.substring(0, 16) : null,
+      pay_date: formData.pay_date ? formData.pay_date.substring(0, 16) : null,
       method: formData.method,
       status: formData.status
     };
@@ -202,7 +203,7 @@ function StoreCreditList() {
 
     const newItem = {
       id: Date.now(),
-      name: product.productName,
+      name: `${product.productName} (${product.size || ''})`,
       price: product.sellingPrice,
       qty: parseInt(calcQty),
       subtotal: product.sellingPrice * parseInt(calcQty)
@@ -235,7 +236,7 @@ function StoreCreditList() {
       <Sidebar menuItems={menuItems} isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} onLogout={handleLogout} />
 
       <div className={`flex-1 flex flex-col overflow-hidden transition-all ${isSidebarOpen ? "ml-64" : "ml-0"}`}>
-        <Header toggleSidebar={toggleSidebar} searchValue="" onSearchChange={() => { }} />
+        <Header toggleSidebar={toggleSidebar} searchValue="" onSearchChange={() => { }} onLogout={handleLogout} />
 
         <main className="flex-1 p-6 overflow-auto">
           <div className="flex justify-between items-center mb-6">
@@ -308,7 +309,7 @@ function StoreCreditList() {
                       <option value="">Select Product...</option>
                       {products.map(p => (
                         <option key={p.productId} value={p.productId}>
-                          {p.productName} - ₱{p.sellingPrice}
+                          {p.productName} ({p.size}) - ₱{p.sellingPrice}
                         </option>
                       ))}
                     </select>

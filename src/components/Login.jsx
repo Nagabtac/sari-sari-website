@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { API_URL } from "../config/constants";
+import logo from "../assets/logo.png";
 
 export default function Login() {
     // useState: Managing form inputs and error state
@@ -21,7 +22,7 @@ export default function Login() {
 
         try {
             // Hardcoded development account
-            if (username === "darwin" && password === "1234") {
+            if (username === "admin" && password === "password123") {
                 // Generate a mock token for development
                 const mockToken = "dev-token-" + Date.now();
                 login(mockToken);
@@ -62,7 +63,7 @@ export default function Login() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-gradient-to-br from-green-600 to-green-800 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
             <div className="w-full max-w-md">
 
                 {/* Login Card */}
@@ -70,13 +71,10 @@ export default function Login() {
 
                     {/* Logo/Brand */}
                     <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-auto">
-                            {/* SVG for Logo Icon (Incomplete in fragments, using a placeholder) */}
-                            <svg className="w-8 h-8 text-white fill-current" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 11l7 7-7 7-7-7-7-7" />
-                            </svg>
+                        <div className="inline-flex items-center justify-center w-auto mb-4">
+                            <img src={logo} alt="Raven Joy Store Logo" className="w-24 h-24 object-contain" />
                         </div>
-                        <h2 className="text-3xl font-bold text-gray-900 mt-4">Welcome Back</h2>
+                        <h2 className="text-3xl font-bold text-gray-900">Welcome Back</h2>
                         <p className="text-gray-600 mt-2">Sign in to your account</p>
                     </div>
 
@@ -136,20 +134,17 @@ export default function Login() {
                             </div>
                         </div>
 
-                        {/* Remember Me & Forgot Password */}
+                        {/* Remember Me */}
                         <div className="flex items-center justify-between">
                             <label className="flex items-center">
                                 <input
                                     type="checkbox"
-                                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                    className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
                                 />
                                 <span className="ml-2 text-sm text-gray-600">
                                     Remember me
                                 </span>
                             </label>
-                            <a href="#" className="text-sm text-blue-600 hover:text-blue-500">
-                                Forgot password?
-                            </a>
                         </div>
 
                         {/* Submit Button */}
@@ -157,7 +152,7 @@ export default function Login() {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 px-4 rounded-md shadow-sm text-sm font-medium hover:from-blue-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center justify-center"
+                                className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-3 px-4 rounded-md shadow-sm text-sm font-medium hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 flex items-center justify-center"
                             >
                                 {loading ? (
                                     <>
@@ -181,20 +176,11 @@ export default function Login() {
                         </div>
                     </form>
 
-
-                    {/* Sign Up Link */}
-                    <p className="text-center text-sm text-gray-600 mt-6">
-                        Don't have an account?{' '}
-                        <Link to="/signup" className="text-blue-600 hover:text-blue-500 font-medium">
-                            Sign up
-                        </Link>
-                    </p>
-
                 </div>
 
                 {/* Footer */}
                 <p className="text-center text-sm text-white mt-10">
-                    © 2024 MyApp. All rights reserved.
+                    © 2024 Raven Joy Store. All rights reserved.
                 </p>
 
             </div>

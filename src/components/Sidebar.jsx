@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import logo from "../assets/logo.png";
 
 function Sidebar({ menuItems, isOpen, toggleSidebar, onLogout }) {
   const navigate = useNavigate();
@@ -16,12 +17,12 @@ function Sidebar({ menuItems, isOpen, toggleSidebar, onLogout }) {
   return (
     <>
       <aside
-        className={`fixed top-0 left-0 h-full w-64 bg-green-700 shadow-xl z-40 transform transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed top-0 left-0 h-full w-64 bg-green-700 shadow-xl z-40 transform transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
-        <div className="flex items-center justify-between p-5 border-b">
-          <h2 className="text-2xl font-bold text-white">Sari-Sari Senpai</h2>
+        <div className="flex flex-col items-center justify-center p-5 border-b border-green-600">
+          <img src={logo} alt="Logo" className="w-16 h-16 object-contain mb-3 bg-white rounded-full p-1" />
+          <h2 className="text-2xl font-bold text-white text-center">Raven Joy Store</h2>
         </div>
 
         <nav className="p-5 space-y-4 ">
