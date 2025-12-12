@@ -5,19 +5,21 @@ import java.time.LocalDateTime;
 
 public class PaymentUpdateDTO {
     private String customerName;
-    
+
     private Integer customerId; // Can be changed to link payment to a different customer
-    
+
     private BigDecimal amount;
-    
+
     private BigDecimal balance;
-    
+
     private String method;
-    
+
     private String status; // "FULL_BALANCE", "PARTIALY", "FULLY_PAID"
-    
+
     private LocalDateTime amountDate; // Payment amount date
-    
+
+    @com.fasterxml.jackson.annotation.JsonAlias("pay_date")
+    @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm")
     private LocalDateTime payDate; // Payment date
 
     // Getters and Setters
@@ -86,4 +88,3 @@ public class PaymentUpdateDTO {
         this.payDate = payDate;
     }
 }
-

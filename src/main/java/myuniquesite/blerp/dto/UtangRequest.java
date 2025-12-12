@@ -1,6 +1,7 @@
 package myuniquesite.blerp.dto;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 public class UtangRequest {
     private String customerName;
@@ -18,6 +19,10 @@ public class UtangRequest {
     private String method; // Payment method (e.g., "credit")
 
     private String status; // Payment status (e.g., "FULL_BALANCE", "PARTIALY", "FULLY_PAID")
+
+    @com.fasterxml.jackson.annotation.JsonAlias("pay_date")
+    @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm")
+    private LocalDateTime payDate; // Payment date
 
     // Getters and Setters
 
@@ -83,5 +88,13 @@ public class UtangRequest {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public LocalDateTime getPayDate() {
+        return payDate;
+    }
+
+    public void setPayDate(LocalDateTime payDate) {
+        this.payDate = payDate;
     }
 }

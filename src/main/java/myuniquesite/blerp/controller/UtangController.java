@@ -90,7 +90,13 @@ public class UtangController {
         // Create a new payment record for the Utang (credit)
         Payment payment = new Payment();
         payment.setCustomerId(customer.getCustomerId());
-        payment.setAmountDate(LocalDateTime.now());
+
+        // Removed amountDate as requested
+        // payment.setAmountDate(LocalDateTime.now());
+
+        if (request.getPayDate() != null) {
+            payment.setPayDate(request.getPayDate());
+        }
 
         // Use amount from request, or default to 0.00
         payment.setAmount(request.getAmount() != null ? request.getAmount() : BigDecimal.ZERO);
@@ -167,15 +173,22 @@ public class UtangController {
 
             // Fetch customer name
             String customerName = "Unknown";
+            String fname = "";
+            String lname = "";
+
             try {
                 Customer customer = customerService.findById(payment.getCustomerId()).orElse(null);
                 if (customer != null) {
                     customerName = customer.getCustomerName();
+                    fname = customer.getFname();
+                    lname = customer.getLname();
                 }
             } catch (Exception e) {
                 // Ignore errors fetching customer
             }
             item.put("customerName", customerName);
+            item.put("fname", fname);
+            item.put("lname", lname);
 
             responseList.add(item);
         }
