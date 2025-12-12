@@ -42,32 +42,61 @@ public class UtangController {
             // Use existing customer if customer_id is provided
             customer = customerService.findById(request.getCustomerId())
                     .orElseThrow(() -> new ResourceNotFoundException(
-                            "Customer with ID " + request.getCustomerId() + " not found.", 
+                            "Customer with ID " + request.getCustomerId() + " not found.",
                             request.getCustomerId().longValue()));
-        } else if (request.getCustomerName() != null && !request.getCustomerName().trim().isEmpty()) {
-            // Check if customer with this name already exists
-            customer = customerService.findByCustomerName(request.getCustomerName())
-                    .orElse(null);
-            
+        } else if ((request.getFname() != null && !request.getFname().trim().isEmpty()) ||
+                (request.getLname() != null && !request.getLname().trim().isEmpty()) ||
+                (request.getCustomerName() != null && !request.getCustomerName().trim().isEmpty())) {
+
+            // Determine name parts
+            String fname = request.getFname();
+            String lname = request.getLname();
+            String fullName = request.getCustomerName();
+
+            // If explicit fname/lname not provided, try to split customerName
+            if ((fname == null || fname.trim().isEmpty()) && fullName != null) {
+                String[] parts = fullName.trim().split("\\s+", 2);
+                fname = parts[0];
+                lname = parts.length > 1 ? parts[1] : fname; // Fallback: use fname as lname if single word
+            }
+
+            // Ensure we have values to avoid DB NotNull constraint
+            if (fname == null || fname.trim().isEmpty())
+                fname = "Unknown";
+            if (lname == null || lname.trim().isEmpty())
+                lname = fname; // Reuse fname if lname missing
+
+            if (fullName == null || fullName.trim().isEmpty()) {
+                fullName = fname + " " + lname;
+            }
+
+            // Check if customer with this name already exists (using full name check as
+            // proxy, or ideally explicit search)
+            // For now, simple check by customerName
+            customer = customerService.findByCustomerName(fullName).orElse(null);
+
             if (customer == null) {
                 // Create new customer if it doesn't exist
                 customer = new Customer();
-                customer.setCustomerName(request.getCustomerName());
+                customer.setFname(fname);
+                customer.setLname(lname);
+                customer.setCustomerName(fullName);
                 customer = customerService.save(customer);
             }
         } else {
-            throw new IllegalArgumentException("Either customerId or customerName must be provided");
+            throw new IllegalArgumentException("Customer details (Id or Name) must be provided");
         }
 
         // Create a new payment record for the Utang (credit)
         Payment payment = new Payment();
         payment.setCustomerId(customer.getCustomerId());
         payment.setAmountDate(LocalDateTime.now());
-        
+
         // Use amount from request, or default to 0.00
         payment.setAmount(request.getAmount() != null ? request.getAmount() : BigDecimal.ZERO);
-        
-        // Use balance from request, or default to amount (or 0.00 if amount is also null)
+
+        // Use balance from request, or default to amount (or 0.00 if amount is also
+        // null)
         if (request.getBalance() != null) {
             payment.setBalance(request.getBalance());
         } else if (request.getAmount() != null) {
@@ -75,12 +104,12 @@ public class UtangController {
         } else {
             payment.setBalance(BigDecimal.ZERO);
         }
-        
+
         // Use method from request, or default to "credit"
-        payment.setMethod(request.getMethod() != null && !request.getMethod().trim().isEmpty() 
-                ? request.getMethod() 
+        payment.setMethod(request.getMethod() != null && !request.getMethod().trim().isEmpty()
+                ? request.getMethod()
                 : "credit");
-        
+
         // Convert status string to enum, or default to FULL_BALANCE
         if (request.getStatus() != null && !request.getStatus().trim().isEmpty()) {
             try {
@@ -120,16 +149,45 @@ public class UtangController {
     }
 
     @GetMapping("/store-credit-list")
-    public ResponseEntity<List<Payment>> getStoreCreditList() {
+    public ResponseEntity<List<Map<String, Object>>> getStoreCreditList() {
         List<Payment> payments = paymentService.findAll();
-        return ResponseEntity.ok(payments);
+        List<Map<String, Object>> responseList = new java.util.ArrayList<>();
+
+        for (Payment payment : payments) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("paymentId", payment.getPaymentId());
+            item.put("customerId", payment.getCustomerId());
+            item.put("amount", payment.getAmount());
+            item.put("balance", payment.getBalance());
+            // item.put("amountDate", payment.getAmountDate()); // User asked to remove
+            // amount date from display, but acceptable to send if needed.
+            item.put("payDate", payment.getPayDate());
+            item.put("method", payment.getMethod());
+            item.put("status", payment.getStatus());
+
+            // Fetch customer name
+            String customerName = "Unknown";
+            try {
+                Customer customer = customerService.findById(payment.getCustomerId()).orElse(null);
+                if (customer != null) {
+                    customerName = customer.getCustomerName();
+                }
+            } catch (Exception e) {
+                // Ignore errors fetching customer
+            }
+            item.put("customerName", customerName);
+
+            responseList.add(item);
+        }
+
+        return ResponseEntity.ok(responseList);
     }
 
     @PutMapping("/store-credit-list/{id}")
     public ResponseEntity<Map<String, Object>> updatePayment(
             @PathVariable Integer id,
             @RequestBody PaymentUpdateDTO updateDTO) {
-        
+
         // Find the payment record
         Payment payment = paymentService.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -137,16 +195,16 @@ public class UtangController {
 
         // Handle customer update/change
         Customer customer;
-        Integer targetCustomerId = updateDTO.getCustomerId() != null 
-                ? updateDTO.getCustomerId() 
+        Integer targetCustomerId = updateDTO.getCustomerId() != null
+                ? updateDTO.getCustomerId()
                 : payment.getCustomerId(); // Use provided customerId or keep existing
-        
+
         // Find the customer (either new or existing)
         customer = customerService.findById(targetCustomerId)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Customer with ID " + targetCustomerId + " not found.", 
+                        "Customer with ID " + targetCustomerId + " not found.",
                         targetCustomerId.longValue()));
-        
+
         // Update customer name if provided (always update if customerName is sent)
         if (updateDTO.getCustomerName() != null && !updateDTO.getCustomerName().trim().isEmpty()) {
             customer.setCustomerName(updateDTO.getCustomerName());
@@ -155,32 +213,32 @@ public class UtangController {
 
         // Update payment fields - update all provided fields
         payment.setCustomerId(customer.getCustomerId());
-        
+
         // Update amount if provided
         if (updateDTO.getAmount() != null) {
             payment.setAmount(updateDTO.getAmount());
         }
-        
+
         // Update balance if provided
         if (updateDTO.getBalance() != null) {
             payment.setBalance(updateDTO.getBalance());
         }
-        
+
         // Update method if provided
         if (updateDTO.getMethod() != null && !updateDTO.getMethod().trim().isEmpty()) {
             payment.setMethod(updateDTO.getMethod());
         }
-        
+
         // Update amount_date if provided
         if (updateDTO.getAmountDate() != null) {
             payment.setAmountDate(updateDTO.getAmountDate());
         }
-        
+
         // Update pay_date if provided
         if (updateDTO.getPayDate() != null) {
             payment.setPayDate(updateDTO.getPayDate());
         }
-        
+
         // Convert status string to enum
         if (updateDTO.getStatus() != null) {
             try {
@@ -240,4 +298,3 @@ public class UtangController {
         }
     }
 }
-

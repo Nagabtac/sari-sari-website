@@ -1,11 +1,13 @@
 package myuniquesite.blerp.dto;
 
-import jakarta.validation.constraints.NotBlank;
 import java.math.BigDecimal;
 
 public class UtangRequest {
-    @NotBlank(message = "Customer name is required")
     private String customerName;
+
+    private String fname;
+
+    private String lname;
 
     private Integer customerId; // Optional - if provided, use existing customer
 
@@ -25,6 +27,22 @@ public class UtangRequest {
 
     public void setCustomerName(String customerName) {
         this.customerName = customerName;
+    }
+
+    public String getFname() {
+        return fname;
+    }
+
+    public void setFname(String fname) {
+        this.fname = fname;
+    }
+
+    public String getLname() {
+        return lname;
+    }
+
+    public void setLname(String lname) {
+        this.lname = lname;
     }
 
     public Integer getCustomerId() {
@@ -67,4 +85,3 @@ public class UtangRequest {
         this.status = status;
     }
 }
-

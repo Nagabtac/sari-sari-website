@@ -38,13 +38,22 @@ public class SaleRestController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Sale createSale(@Valid @RequestBody Sale sale) {
-        return saleService.save(sale);
+        try {
+            if (sale.getCustomerId() == null) {
+                sale.setCustomerId(1);
+            }
+            return saleService.save(sale);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     @PutMapping("/{id}")
     public Sale updateSale(@PathVariable Integer id, @Valid @RequestBody Sale saleDetails) {
         Sale sale = saleService.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Sale with ID " + id + " not found for update.", id.longValue()));
+                .orElseThrow(() -> new ResourceNotFoundException("Sale with ID " + id + " not found for update.",
+                        id.longValue()));
 
         sale.setSaleDate(saleDetails.getSaleDate());
         sale.setAmount(saleDetails.getAmount());
@@ -55,10 +64,10 @@ public class SaleRestController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteSale(@PathVariable Integer id) {
         saleService.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Sale with ID " + id + " not found for delete.", id.longValue()));
+                .orElseThrow(() -> new ResourceNotFoundException("Sale with ID " + id + " not found for delete.",
+                        id.longValue()));
 
         saleService.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 }
-
