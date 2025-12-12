@@ -19,8 +19,10 @@ function Dashboard() {
   const [totalProducts, setTotalProducts] = useState(0);
   const [totalSales, setTotalSales] = useState(0);
   const [totalUtang, setTotalUtang] = useState(0);
+  const [lowStockProducts, setLowStockProducts] = useState([]);
   const [calculatorValue, setCalculatorValue] = useState("0");
   const [calculatorHistory, setCalculatorHistory] = useState([]);
+  const [salesOffset, setSalesOffset] = useState(() => parseFloat(localStorage.getItem('salesOffset') || '0'));
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { logout, token } = useAuth();
@@ -64,6 +66,10 @@ function Dashboard() {
           ? data
           : (data.products || data.data || []);
         setTotalProducts(productsArray.length);
+
+        // Filter for low stock (<= 5)
+        const lowStock = productsArray.filter(p => p.quantityInStock <= 5);
+        setLowStockProducts(lowStock);
       }
     } catch (err) {
       console.error("Error fetching products:", err);
@@ -107,12 +113,12 @@ function Dashboard() {
           : (data.sales || data.data || []);
 
         // Calculate total sales from all sales records
-        const total = salesArray.reduce((sum, sale) => {
+        const dbTotal = salesArray.reduce((sum, sale) => {
           const amount = parseFloat(sale.amount || 0);
           return sum + amount;
         }, 0);
 
-        setTotalSales(total);
+        setTotalSales(Math.max(0, dbTotal - salesOffset));
       } else {
         console.error("Error fetching sales:", res.status, res.statusText);
       }
@@ -242,12 +248,12 @@ function Dashboard() {
   };
 
   const clearSales = async () => {
-    if (!window.confirm("Are you sure you want to clear all sales? This will delete all sales records from the database.")) {
+    if (!window.confirm("Are you sure you want to reset the sales view? This will set the counter to 0 but keep your data safe.")) {
       return;
     }
 
     try {
-      // Fetch all sales first
+      // Fetch all sales to get current DB total
       const res = await fetch(SALES_API, {
         headers: getHeaders(token)
       });
@@ -258,22 +264,21 @@ function Dashboard() {
           ? data
           : (data.sales || data.data || []);
 
-        // Delete each sale record
-        const deletePromises = salesArray.map(sale => {
-          const saleId = sale.sale_id || sale.saleId || sale.id;
-          return fetch(`${SALES_API}/${saleId}`, {
-            method: "DELETE",
-            headers: getHeaders(token)
-          });
-        });
+        // Calculate current total in DB
+        const currentDbTotal = salesArray.reduce((sum, sale) => {
+          return sum + parseFloat(sale.amount || 0);
+        }, 0);
 
-        await Promise.all(deletePromises);
+        // Set offset to current total (tare)
+        setSalesOffset(currentDbTotal);
+        localStorage.setItem('salesOffset', currentDbTotal.toString());
         setTotalSales(0);
-        alert("All sales have been cleared.");
+
+        alert("Sales view has been reset (Database records preserved).");
       }
     } catch (error) {
-      console.error("Error clearing sales:", error);
-      alert("Failed to clear sales. Please try again.");
+      console.error("Error resetting sales:", error);
+      alert("Failed to reset sales. Please try again.");
     }
   };
 
@@ -340,6 +345,48 @@ function Dashboard() {
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">Total Utang</h3>
                 <p className="text-3xl font-bold text-red-600">{loading ? "..." : totalUtang}</p>
+              </div>
+            </div>
+
+            {/* Low Stock Alert */}
+            <div className="mt-6">
+              <div className={`bg-white rounded-xl shadow-sm border p-6 ${lowStockProducts.length > 0 ? "border-red-200" : "border-gray-200"}`}>
+                <div className="flex items-center mb-4">
+                  <span className="text-2xl mr-2">⚠️</span>
+                  <h3 className="text-xl font-semibold text-gray-800">Low Stock Alert</h3>
+                  {lowStockProducts.length > 0 && (
+                    <span className="ml-3 bg-red-100 text-red-800 text-xs font-semibold px-2.5 py-0.5 rounded">
+                      {lowStockProducts.length} Items needing attention
+                    </span>
+                  )}
+                </div>
+
+                {lowStockProducts.length === 0 ? (
+                  <p className="text-green-600 font-medium">All products are well stocked.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-left text-sm">
+                      <thead className="bg-gray-50 text-gray-600 font-medium border-b">
+                        <tr>
+                          <th className="py-2 px-3">Product Name</th>
+                          <th className="py-2 px-3 text-right">Stock</th>
+                          <th className="py-2 px-3 text-right">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {lowStockProducts.map(p => (
+                          <tr key={p.productId} className="border-b hover:bg-red-50">
+                            <td className="py-2 px-3 font-medium text-gray-800">{p.productName}</td>
+                            <td className="py-2 px-3 text-right font-bold text-red-600">{p.quantityInStock}</td>
+                            <td className="py-2 px-3 text-right">
+                              <span className="text-red-600 text-xs bg-red-100 px-2 py-1 rounded-full">Low Stock</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
 

@@ -39,11 +39,18 @@ function StoreCreditList() {
   };
   const [formData, setFormData] = useState(initialFormState);
 
+  // Calculator State
+  const [products, setProducts] = useState([]);
+  const [calcItems, setCalcItems] = useState([]);
+  const [selectedProductId, setSelectedProductId] = useState("");
+  const [calcQty, setCalcQty] = useState(1);
+
   // Ensure API_URL doesn't already include /api path
   let baseUrl = API_URL;
   if (baseUrl.includes('/api/')) baseUrl = baseUrl.split('/api')[0];
   baseUrl = baseUrl.replace(/\/+$/, '');
   const STORE_CREDIT_API = `${baseUrl}/api/store-credit-list`;
+  const PRODUCT_API = `${baseUrl}/api/products`;
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const handleLogout = () => { logout(); navigate("/login"); };
@@ -56,7 +63,10 @@ function StoreCreditList() {
   ];
 
   useEffect(() => {
-    if (token) fetchStoreCredits();
+    if (token) {
+      fetchStoreCredits();
+      fetchProducts();
+    }
   }, [token]);
 
   const fetchStoreCredits = async () => {
@@ -74,6 +84,18 @@ function StoreCreditList() {
       setPayments([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch(PRODUCT_API, { headers: getHeaders(token) });
+      if (res.ok) {
+        const data = await res.json();
+        setProducts(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch products", err);
     }
   };
 
@@ -117,6 +139,7 @@ function StoreCreditList() {
     const now = new Date().toISOString().slice(0, 16);
     setFormData({ ...initialFormState, amount_date: now });
     setIsEditing(false);
+    setCalcItems([]); // Reset calculator
     setIsModalOpen(true);
   };
 
@@ -169,6 +192,42 @@ function StoreCreditList() {
     }
 
     fetchStoreCredits();
+  };
+
+  // Calculator Functions
+  const handleAddCalcItem = () => {
+    if (!selectedProductId) return;
+    const product = products.find(p => p.productId === parseInt(selectedProductId));
+    if (!product) return;
+
+    const newItem = {
+      id: Date.now(),
+      name: product.productName,
+      price: product.sellingPrice,
+      qty: parseInt(calcQty),
+      subtotal: product.sellingPrice * parseInt(calcQty)
+    };
+
+    const newItems = [...calcItems, newItem];
+    setCalcItems(newItems);
+    updateAmountFromCalc(newItems);
+    setCalcQty(1);
+    setSelectedProductId("");
+  };
+
+  const removeCalcItem = (id) => {
+    const newItems = calcItems.filter(i => i.id !== id);
+    setCalcItems(newItems);
+    updateAmountFromCalc(newItems);
+  };
+
+  const updateAmountFromCalc = (items) => {
+    const total = items.reduce((sum, item) => sum + item.subtotal, 0);
+    setFormData(prev => ({
+      ...prev,
+      amount: total,
+      balance: total
+    }));
   };
 
   return (
@@ -236,6 +295,68 @@ function StoreCreditList() {
             <h3 className="text-xl font-bold mb-4">{isEditing ? "Edit Payment" : "New Utang"}</h3>
 
             <form onSubmit={handleSave} className="grid grid-cols-2 gap-4">
+
+              {!isEditing && (
+                <div className="col-span-2 bg-gray-50 p-4 rounded mb-4 border border-gray-200">
+                  <h4 className="font-semibold mb-2 text-gray-700">Product Calculator</h4>
+                  <div className="flex gap-2 mb-3">
+                    <select
+                      className="border p-2 rounded flex-1"
+                      value={selectedProductId}
+                      onChange={(e) => setSelectedProductId(e.target.value)}
+                    >
+                      <option value="">Select Product...</option>
+                      {products.map(p => (
+                        <option key={p.productId} value={p.productId}>
+                          {p.productName} - ₱{p.sellingPrice}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      className="border p-2 rounded w-20"
+                      value={calcQty}
+                      min="1"
+                      onChange={(e) => setCalcQty(e.target.value)}
+                    />
+                    <button type="button" onClick={handleAddCalcItem} className="bg-green-600 text-white px-3 rounded hover:bg-green-700">Add</button>
+                  </div>
+
+                  {calcItems.length > 0 && (
+                    <div className="text-sm bg-white p-2 rounded border">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="text-left text-gray-500 border-b">
+                            <th className="pb-1">Item</th>
+                            <th className="pb-1">Qty</th>
+                            <th className="pb-1 text-right">Subtotal</th>
+                            <th className="pb-1"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {calcItems.map(item => (
+                            <tr key={item.id} className="border-b last:border-0">
+                              <td className="py-1">{item.name}</td>
+                              <td className="py-1">{item.qty}</td>
+                              <td className="py-1 text-right">₱{item.subtotal.toFixed(2)}</td>
+                              <td className="py-1 text-right">
+                                <button type="button" onClick={() => removeCalcItem(item.id)} className="text-red-500 font-bold px-2">x</button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr className="font-bold border-t bg-gray-50">
+                            <td colSpan="2" className="pt-2">Total</td>
+                            <td className="pt-2 text-right">₱{calcItems.reduce((s, i) => s + i.subtotal, 0).toFixed(2)}</td>
+                            <td></td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
               <div>
                 <label className="block mb-1">First Name</label>
                 <input
@@ -270,10 +391,6 @@ function StoreCreditList() {
                 <input type="number" name="balance" value={formData.balance} onChange={handleInputChange} className="border p-2 rounded w-full" required />
               </div>
 
-              <div>
-                <label className="block mb-1">Amount Date</label>
-                <input type="datetime-local" name="amount_date" value={formData.amount_date} onChange={handleInputChange} className="border p-2 rounded w-full" required />
-              </div>
 
               <div>
                 <label className="block mb-1">Pay Date</label>
@@ -282,7 +399,11 @@ function StoreCreditList() {
 
               <div>
                 <label className="block mb-1">Method</label>
-                <input type="text" name="method" value={formData.method} onChange={handleInputChange} className="border p-2 rounded w-full" required />
+                <select name="method" value={formData.method} onChange={handleInputChange} className="border p-2 rounded w-full" required>
+                  <option value="credit">Credit</option>
+                  <option value="gcash">Gcash</option>
+                  <option value="cash">Cash</option>
+                </select>
               </div>
 
               <div>

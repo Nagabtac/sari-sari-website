@@ -45,10 +45,10 @@ export default function Login() {
 
             // Parse the JSON response
             const data = await res.json();
-            
+
             // Call the login function from AuthContext to store the token
             login(data.token);
-            
+
             // Navigate the user to the home page
             navigate("/");
 
@@ -64,16 +64,16 @@ export default function Login() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
             <div className="w-full max-w-md">
-                
+
                 {/* Login Card */}
                 <div className="bg-white p-8 rounded-lg shadow-2xl">
-                    
+
                     {/* Logo/Brand */}
                     <div className="text-center mb-8">
                         <div className="inline-flex items-center justify-center w-auto">
                             {/* SVG for Logo Icon (Incomplete in fragments, using a placeholder) */}
                             <svg className="w-8 h-8 text-white fill-current" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 11l7 7-7 7-7-7-7-7"/> 
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 11l7 7-7 7-7-7-7-7" />
                             </svg>
                         </div>
                         <h2 className="text-3xl font-bold text-gray-900 mt-4">Welcome Back</h2>
@@ -84,7 +84,7 @@ export default function Login() {
                     {error && (
                         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative mb-4 flex items-center">
                             <svg className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/>
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                             </svg>
                             <span className="text-sm">{error}</span>
                         </div>
@@ -181,39 +181,6 @@ export default function Login() {
                         </div>
                     </form>
 
-                    {/* Divider */}
-                    <div className="relative my-6">
-                        <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-gray-300"></div>
-                        </div>
-                        <div className="relative flex justify-center text-sm">
-                            <span className="px-2 bg-white text-gray-500">
-                                Or continue with
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* Social Sign-In Buttons */}
-                    <div className="grid grid-cols-2 gap-3">
-                        {/* Google Sign-In Button */}
-                        <button className="flex items-center justify-center w-full py-3 px-4 rounded-md shadow-sm text-sm font-medium border border-gray-300 hover:bg-gray-50">
-                            <svg className="w-5 h-5 mr-2" viewBox="0 0 48 48">
-                                <path fill="#4285F4" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.15 30.5 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.44 13.75 17.61 9.5 24 9.5z"/>
-                                <path fill="#34A853" d="M46.7 24.5s0-1.87-.16-2.92h-2.11v-1.78h-3.95v1.78h-2.11v2.92h2.11v1.78h3.95v-1.78h2.11c.07-1.14.16-2.92.16-2.92z"/>
-                                <path fill="#FBBC05" d="M5.84 31.9a15.91 15.91 0 00-.77 4.54c0 1.58.42 3.11 1.25 4.54l7.98-6.19C13.2 32.54 13.2 32.54 5.84 31.9z"/>
-                                <path fill="#EA4335" d="M24 48c6.48 0 11.96-2.13 15.83-5.78l-7.46-5.78c-2.48 1.93-5.69 3.09-9.37 3.09-6.39 0-11.56-4.25-13.4-9.98l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-                            </svg>
-                            <span className="text-sm font-medium text-gray-700">Google</span>
-                        </button>
-
-                        {/* Apple/Other Sign-In Button */}
-                        <button className="flex items-center justify-center w-full py-3 px-4 rounded-md shadow-sm text-sm font-medium border border-gray-300 hover:bg-gray-50">
-                            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 2C6.477 2 2 6.477 2 12c0 4.238 2.635 7.85 6.477 9.477.564.103.771-.245.771-.545 0-.27-.01-1.127-.015-2.075-2.565.558-3.111-1.241-3.111-1.241-.419-1.063-1.022-1.348-1.022-1.348-.836-.57.063-.559.063-.559.924.065 1.411.94 1.411.94.82 1.408 2.152 1.002 2.671.764.083-.594.321-1.002.585-1.233-2.046-.232-4.197-1.023-4.197-4.545 0-1.006.357-1.831.937-2.48-.094-.233-.406-1.173.088-2.443 0 0 .764-.249 2.503.935a8.88 8.88 0 012.33-.312c.813-.005 1.626.104 2.33.312 1.74-1.184 2.503-.935 2.503-.935.494 1.27.182 2.21.088 2.443.58.649.937 1.474.937 2.48 0 3.522-2.154 4.308-4.204 4.538.332.28.63.834.63 1.68 0 1.21-.01 2.182-.015 2.48 0 .297.206.65.775.542C19.36 19.85 22 16.237 22 12c0-5.523-4.477-10-10-10z"/>
-                            </svg>
-                            <span className="text-sm font-medium text-gray-700">GitHub/Other</span>
-                        </button>
-                    </div>
 
                     {/* Sign Up Link */}
                     <p className="text-center text-sm text-gray-600 mt-6">
@@ -223,8 +190,8 @@ export default function Login() {
                         </Link>
                     </p>
 
-                </div> 
-                
+                </div>
+
                 {/* Footer */}
                 <p className="text-center text-sm text-white mt-10">
                     © 2024 MyApp. All rights reserved.

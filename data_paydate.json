@@ -1,0 +1,10 @@
+{
+    "fname": "Maria",
+    "lname": "Clara",
+    "customerName": "Maria Clara",
+    "amount": 200,
+    "balance": 200,
+    "pay_date": "2025-12-12T10:30",
+    "method": "credit",
+    "status": "FULL_BALANCE"
+}
