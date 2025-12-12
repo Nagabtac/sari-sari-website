@@ -29,6 +29,9 @@ public class ProductDTO {
 
     private String description;
 
+    @NotBlank(message = "Size is required")
+    private String size;
+
     // Getters and Setters
 
     public String getProductName() {
@@ -86,5 +89,12 @@ public class ProductDTO {
     public void setDescription(String description) {
         this.description = description;
     }
-}
 
+    public String getSize() {
+        return size;
+    }
+
+    public void setSize(String size) {
+        this.size = size;
+    }
+}

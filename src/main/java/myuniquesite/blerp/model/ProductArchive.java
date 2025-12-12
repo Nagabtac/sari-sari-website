@@ -1,51 +1,54 @@
 package myuniquesite.blerp.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "products")
-public class Product {
+@Table(name = "products_archive")
+public class ProductArchive {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "product_id")
     private Integer productId;
 
-    @NotBlank(message = "Product name is required")
     @Column(name = "product_name", nullable = false, length = 100)
     private String productName;
 
-    @NotNull(message = "Selling price is required")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Selling price must be greater than 0")
     @Column(name = "selling_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal sellingPrice;
 
-    @NotNull(message = "Base price is required")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Base price must be greater than 0")
     @Column(name = "base_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal basePrice;
 
-    @NotNull(message = "Quantity in stock is required")
-    @Min(value = 0, message = "Quantity in stock must be 0 or greater")
     @Column(name = "quantity_in_stock", nullable = false)
-    private Integer quantityInStock = 0;
+    private Integer quantityInStock;
 
     @Column(name = "category_id")
     private Integer categoryId;
 
-    @Column(name = "sku", unique = true, length = 50)
+    @Column(name = "sku", length = 50)
     private String sku;
 
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @NotBlank(message = "Size is required")
-    @Column(name = "size", length = 20)
+    @Column(name = "size", length = 20, nullable = false)
     private String size;
+
+    // Constructors
+    public ProductArchive() {
+    }
+
+    public ProductArchive(Product product) {
+        this.productId = product.getProductId();
+        this.productName = product.getProductName();
+        this.sellingPrice = product.getSellingPrice();
+        this.basePrice = product.getBasePrice();
+        this.quantityInStock = product.getQuantityInStock();
+        this.categoryId = product.getCategoryId();
+        this.sku = product.getSku();
+        this.description = product.getDescription();
+        this.size = product.getSize();
+    }
 
     // Getters and Setters
 

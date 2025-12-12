@@ -4,6 +4,7 @@ import myuniquesite.blerp.model.Product;
 import myuniquesite.blerp.service.ProductService;
 import myuniquesite.blerp.exception.ResourceNotFoundException;
 
+import myuniquesite.blerp.model.ProductArchive;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,10 +29,28 @@ public class ProductRestController {
         return productService.findAll();
     }
 
+    @GetMapping("/archive")
+    public List<ProductArchive> getAllArchivedProducts() {
+        return productService.findAllArchived();
+    }
+
+    @PostMapping("/archive/{id}/restore")
+    public ResponseEntity<?> restoreProduct(@PathVariable Integer id) {
+        try {
+            productService.unarchive(id);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            e.printStackTrace(); // Log error to console
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(java.util.Collections.singletonMap("message", "Restore failed: " + e.getMessage()));
+        }
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Product> getProductById(@PathVariable Integer id) {
         Product product = productService.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product with ID " + id + " not found.", id.longValue()));
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Product with ID " + id + " not found.", id.longValue()));
         return ResponseEntity.ok(product);
     }
 
@@ -44,7 +63,8 @@ public class ProductRestController {
     @PutMapping("/{id}")
     public Product updateProduct(@PathVariable Integer id, @Valid @RequestBody Product productDetails) {
         Product product = productService.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product with ID " + id + " not found for update.", id.longValue()));
+                .orElseThrow(() -> new ResourceNotFoundException("Product with ID " + id + " not found for update.",
+                        id.longValue()));
 
         product.setProductName(productDetails.getProductName());
         product.setSellingPrice(productDetails.getSellingPrice());
@@ -53,6 +73,7 @@ public class ProductRestController {
         product.setCategoryId(productDetails.getCategoryId());
         product.setSku(productDetails.getSku());
         product.setDescription(productDetails.getDescription());
+        product.setSize(productDetails.getSize());
 
         return productService.save(product);
     }
@@ -60,10 +81,10 @@ public class ProductRestController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable Integer id) {
         productService.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product with ID " + id + " not found for delete.", id.longValue()));
+                .orElseThrow(() -> new ResourceNotFoundException("Product with ID " + id + " not found for delete.",
+                        id.longValue()));
 
         productService.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 }
-

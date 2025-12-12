@@ -197,95 +197,110 @@ public class UtangController {
     }
 
     @PutMapping("/store-credit-list/{id}")
-    public ResponseEntity<Map<String, Object>> updatePayment(
+    public ResponseEntity<?> updatePayment(
             @PathVariable Integer id,
             @RequestBody PaymentUpdateDTO updateDTO) {
 
-        // Find the payment record
-        Payment payment = paymentService.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Payment with ID " + id + " not found for update.", id.longValue()));
+        try {
+            // Find the payment record
+            Payment payment = paymentService.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Payment with ID " + id + " not found for update.", id.longValue()));
 
-        // Handle customer update/change
-        Customer customer;
-        Integer targetCustomerId = updateDTO.getCustomerId() != null
-                ? updateDTO.getCustomerId()
-                : payment.getCustomerId(); // Use provided customerId or keep existing
+            // Handle customer update/change
+            Customer customer;
+            Integer targetCustomerId = updateDTO.getCustomerId() != null
+                    ? updateDTO.getCustomerId()
+                    : payment.getCustomerId(); // Use provided customerId or keep existing
 
-        // Find the customer (either new or existing)
-        customer = customerService.findById(targetCustomerId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Customer with ID " + targetCustomerId + " not found.",
-                        targetCustomerId.longValue()));
+            // Find the customer (either new or existing)
+            customer = customerService.findById(targetCustomerId)
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Customer with ID " + targetCustomerId + " not found.",
+                            targetCustomerId.longValue()));
 
-        // Update customer name if provided (always update if customerName is sent)
-        if (updateDTO.getCustomerName() != null && !updateDTO.getCustomerName().trim().isEmpty()) {
-            customer.setCustomerName(updateDTO.getCustomerName());
+            // Update customer name if provided (always update if customerName is sent)
+            if (updateDTO.getCustomerName() != null && !updateDTO.getCustomerName().trim().isEmpty()) {
+                customer.setCustomerName(updateDTO.getCustomerName());
+            }
+
+            if (updateDTO.getFname() != null && !updateDTO.getFname().trim().isEmpty()) {
+                customer.setFname(updateDTO.getFname());
+            }
+
+            if (updateDTO.getLname() != null && !updateDTO.getLname().trim().isEmpty()) {
+                customer.setLname(updateDTO.getLname());
+            }
+
             customer = customerService.save(customer);
-        }
 
-        // Update payment fields - update all provided fields
-        payment.setCustomerId(customer.getCustomerId());
+            // Update payment fields - update all provided fields
+            payment.setCustomerId(customer.getCustomerId());
 
-        // Update amount if provided
-        if (updateDTO.getAmount() != null) {
-            payment.setAmount(updateDTO.getAmount());
-        }
+            // Update amount if provided
+            if (updateDTO.getAmount() != null) {
+                payment.setAmount(updateDTO.getAmount());
+            }
 
-        // Update balance if provided
-        if (updateDTO.getBalance() != null) {
-            payment.setBalance(updateDTO.getBalance());
-        }
+            // Update balance if provided
+            if (updateDTO.getBalance() != null) {
+                payment.setBalance(updateDTO.getBalance());
+            }
 
-        // Update method if provided
-        if (updateDTO.getMethod() != null && !updateDTO.getMethod().trim().isEmpty()) {
-            payment.setMethod(updateDTO.getMethod());
-        }
+            // Update method if provided
+            if (updateDTO.getMethod() != null && !updateDTO.getMethod().trim().isEmpty()) {
+                payment.setMethod(updateDTO.getMethod());
+            }
 
-        // Update amount_date if provided
-        if (updateDTO.getAmountDate() != null) {
-            payment.setAmountDate(updateDTO.getAmountDate());
-        }
+            // Update amount_date if provided
+            if (updateDTO.getAmountDate() != null) {
+                payment.setAmountDate(updateDTO.getAmountDate());
+            }
 
-        // Update pay_date if provided
-        if (updateDTO.getPayDate() != null) {
-            payment.setPayDate(updateDTO.getPayDate());
-        }
+            // Update pay_date if provided
+            if (updateDTO.getPayDate() != null) {
+                payment.setPayDate(updateDTO.getPayDate());
+            }
 
-        // Convert status string to enum
-        if (updateDTO.getStatus() != null) {
-            try {
-                Payment.PaymentStatus status = Payment.PaymentStatus.valueOf(updateDTO.getStatus());
-                payment.setStatus(status);
-            } catch (IllegalArgumentException e) {
-                // Handle status mapping from frontend format
-                switch (updateDTO.getStatus().toUpperCase()) {
-                    case "FULLY PAID":
-                    case "FULLY_PAID":
-                        payment.setStatus(Payment.PaymentStatus.FULLY_PAID);
-                        break;
-                    case "PARTIALLY PAID":
-                    case "PARTIALY":
-                        payment.setStatus(Payment.PaymentStatus.PARTIALY);
-                        break;
-                    case "FULL BALANCE":
-                    case "FULL_BALANCE":
-                        payment.setStatus(Payment.PaymentStatus.FULL_BALANCE);
-                        break;
-                    default:
-                        payment.setStatus(Payment.PaymentStatus.FULL_BALANCE);
+            // Convert status string to enum
+            if (updateDTO.getStatus() != null) {
+                try {
+                    Payment.PaymentStatus status = Payment.PaymentStatus.valueOf(updateDTO.getStatus());
+                    payment.setStatus(status);
+                } catch (IllegalArgumentException e) {
+                    // Handle status mapping from frontend format
+                    switch (updateDTO.getStatus().toUpperCase()) {
+                        case "FULLY PAID":
+                        case "FULLY_PAID":
+                            payment.setStatus(Payment.PaymentStatus.FULLY_PAID);
+                            break;
+                        case "PARTIALLY PAID":
+                        case "PARTIALY":
+                            payment.setStatus(Payment.PaymentStatus.PARTIALY);
+                            break;
+                        case "FULL BALANCE":
+                        case "FULL_BALANCE":
+                            payment.setStatus(Payment.PaymentStatus.FULL_BALANCE);
+                            break;
+                        default:
+                            payment.setStatus(Payment.PaymentStatus.FULL_BALANCE);
+                    }
                 }
             }
+
+            Payment updatedPayment = paymentService.save(payment);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Payment updated successfully");
+            response.put("customer", customer);
+            response.put("payment", updatedPayment);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(java.util.Collections.singletonMap("error", "Update failed: " + e.getMessage()));
         }
-
-        Payment updatedPayment = paymentService.save(payment);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Payment updated successfully");
-        response.put("customer", customer);
-        response.put("payment", updatedPayment);
-
-        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/store-credit-list/{id}")

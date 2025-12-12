@@ -13,8 +13,15 @@ public class ProductService {
     @Autowired
     private ProductRepository productRepository;
 
+    @Autowired
+    private myuniquesite.blerp.repository.ProductArchiveRepository productArchiveRepository;
+
     public List<Product> findAll() {
         return productRepository.findAll();
+    }
+
+    public List<myuniquesite.blerp.model.ProductArchive> findAllArchived() {
+        return productArchiveRepository.findAll();
     }
 
     public Optional<Product> findById(Integer id) {
@@ -26,7 +33,40 @@ public class ProductService {
     }
 
     public void deleteById(Integer id) {
-        productRepository.deleteById(id);
+        Optional<Product> productOpt = productRepository.findById(id);
+        if (productOpt.isPresent()) {
+            Product product = productOpt.get();
+            myuniquesite.blerp.model.ProductArchive archive = new myuniquesite.blerp.model.ProductArchive(product);
+            productArchiveRepository.save(archive);
+            productRepository.deleteById(id);
+        } else {
+            throw new RuntimeException("Product not found with id " + id);
+        }
+    }
+
+    public void unarchive(Integer id) {
+        Optional<myuniquesite.blerp.model.ProductArchive> archiveOpt = productArchiveRepository.findById(id);
+        if (archiveOpt.isPresent()) {
+            myuniquesite.blerp.model.ProductArchive archive = archiveOpt.get();
+            Product product = new Product();
+            // Do NOT set productId, let database generate a new one to avoid conflicts with
+            // IDENTITY strategy
+            // product.setProductId(archive.getProductId());
+
+            product.setProductName(archive.getProductName());
+            product.setSellingPrice(archive.getSellingPrice());
+            product.setBasePrice(archive.getBasePrice());
+            product.setQuantityInStock(archive.getQuantityInStock());
+            product.setCategoryId(archive.getCategoryId());
+            product.setSku(archive.getSku());
+            product.setDescription(archive.getDescription());
+            product.setSize(archive.getSize());
+
+            productRepository.save(product);
+            productArchiveRepository.deleteById(id);
+        } else {
+            throw new RuntimeException("Archived product not found with id " + id);
+        }
     }
 
     public long count() {
@@ -37,4 +77,3 @@ public class ProductService {
         return productRepository.findBySku(sku);
     }
 }
-
