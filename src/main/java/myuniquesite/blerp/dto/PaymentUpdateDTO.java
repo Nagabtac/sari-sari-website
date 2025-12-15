@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class PaymentUpdateDTO {
+    @com.fasterxml.jackson.annotation.JsonAlias("customer_name")
     private String customerName;
 
     private Integer customerId; // Can be changed to link payment to a different customer

@@ -325,4 +325,23 @@ public class UtangController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         }
     }
+
+    @PostMapping("/store-credit-list/{id}/archive")
+    public ResponseEntity<Map<String, String>> archivePayment(@PathVariable Integer id) {
+        try {
+            paymentService.archivePayment(id);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Payment archived successfully");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("message", "Failed to archive payment: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    @GetMapping("/archive/payments")
+    public ResponseEntity<List<myuniquesite.blerp.model.PaymentArchive>> getArchivedPayments() {
+        return ResponseEntity.ok(paymentService.findAllArchived());
+    }
 }
