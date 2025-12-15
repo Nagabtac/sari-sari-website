@@ -36,5 +36,8 @@ public class CustomerService {
     public Optional<Customer> findByCustomerName(String customerName) {
         return customerRepository.findByCustomerName(customerName);
     }
-}
 
+    public Optional<Customer> findFirstByCustomerName(String customerName) {
+        return customerRepository.findFirstByCustomerName(customerName);
+    }
+}

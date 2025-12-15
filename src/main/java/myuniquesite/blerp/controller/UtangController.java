@@ -340,6 +340,30 @@ public class UtangController {
         }
     }
 
+    @PostMapping("/archive/payments/{id}/restore")
+    public ResponseEntity<?> restorePayment(@PathVariable Integer id) {
+        try {
+            paymentService.unarchivePayment(id);
+            return ResponseEntity.ok().build();
+        } catch (Throwable e) {
+            e.printStackTrace(); // Ensure it's logged on server too
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(java.util.Collections.singletonMap("message", "Restore failed: " + e.toString()));
+        }
+    }
+
+    @DeleteMapping("/archive/payments/{id}")
+    public ResponseEntity<?> deleteArchivedPayment(@PathVariable Integer id) {
+        try {
+            paymentService.deleteArchivedPayment(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(java.util.Collections.singletonMap("message", "Delete failed: " + e.toString()));
+        }
+    }
+
     @GetMapping("/archive/payments")
     public ResponseEntity<List<myuniquesite.blerp.model.PaymentArchive>> getArchivedPayments() {
         return ResponseEntity.ok(paymentService.findAllArchived());

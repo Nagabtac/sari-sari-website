@@ -46,6 +46,17 @@ public class ProductRestController {
         }
     }
 
+    @DeleteMapping("/archive/{id}")
+    public ResponseEntity<?> deleteArchivedProduct(@PathVariable Integer id) {
+        try {
+            productService.deleteArchived(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(java.util.Collections.singletonMap("message", "Delete failed: " + e.getMessage()));
+        }
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Product> getProductById(@PathVariable Integer id) {
         Product product = productService.findById(id)

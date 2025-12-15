@@ -76,4 +76,12 @@ public class ProductService {
     public Optional<Product> findBySku(String sku) {
         return productRepository.findBySku(sku);
     }
+
+    public void deleteArchived(Integer id) {
+        if (productArchiveRepository.existsById(id)) {
+            productArchiveRepository.deleteById(id);
+        } else {
+            throw new RuntimeException("Archived product not found with id " + id);
+        }
+    }
 }
