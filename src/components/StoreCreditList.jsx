@@ -130,7 +130,7 @@ function StoreCreditList() {
       amount_date: "",
       pay_date: payment.payDate ? payment.payDate.substring(0, 16) : "",
       method: payment.method || "",
-      status: payment.status || "FULL_BALANCE"
+      status: payment.status ? payment.status.toLowerCase() : "full_balance"
     });
     setIsEditing(true);
     setIsModalOpen(true);
@@ -305,8 +305,6 @@ function StoreCreditList() {
                       <button className="text-indigo-600" onClick={() => openEditModal(p)}>Edit</button>
                       <span className="mx-2">|</span>
                       <button className="text-orange-500" onClick={() => handleArchive(p.paymentId)}>Archive</button>
-                      <span className="mx-2">|</span>
-                      <button className="text-red-600" onClick={() => handleDelete(p.paymentId)}>Delete</button>
                     </td>
                   </tr>
                 ))}

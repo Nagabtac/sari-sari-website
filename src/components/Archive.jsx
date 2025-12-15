@@ -111,13 +111,80 @@ function Archive() {
 
             if (res.ok) {
                 setArchivedProducts(prev => prev.filter(p => p.productId !== id));
+                alert("Product restored successfully!");
             } else {
                 const errorData = await res.json().catch(() => ({}));
                 alert(`Failed to restore product: ${errorData.message || res.statusText}`);
             }
         } catch (err) {
             console.error("Error restoring product:", err);
-            alert("Failed to restore product.");
+        }
+    };
+
+    const handleProductDelete = async (id) => {
+        if (!window.confirm("Are you sure you want to PERMANENTLY delete this product? This acton cannot be undone.")) return;
+
+        try {
+            const res = await fetch(`${ARCHIVE_PRODUCTS_API}/${id}`, {
+                method: "DELETE",
+                headers: getHeaders(token)
+            });
+
+            if (res.ok) {
+                setArchivedProducts(prev => prev.filter(p => p.productId !== id));
+                alert("Product permanently deleted.");
+            } else {
+                const errorData = await res.json().catch(() => ({}));
+                alert(`Failed to delete product: ${errorData.message || res.statusText}`);
+            }
+        } catch (err) {
+            console.error("Error deleting product:", err);
+            alert("Failed to delete product.");
+        }
+    };
+
+    const handlePaymentUnarchive = async (id) => {
+        if (!window.confirm("Restore this payment record?")) return;
+        try {
+            const res = await fetch(`${ARCHIVE_PAYMENTS_API}/${id}/restore`, {
+                method: "POST",
+                headers: getHeaders(token)
+            });
+            if (res.ok) {
+                setArchivedPayments(prev => prev.filter(p => p.paymentId !== id));
+                alert("Payment restored successfully!");
+            } else {
+                const text = await res.text();
+                let errorMessage;
+                try {
+                    const errorData = JSON.parse(text);
+                    errorMessage = errorData.message || res.statusText;
+                } catch (e) {
+                    errorMessage = text || res.statusText;
+                }
+                alert(`Failed to restore payment: ${errorMessage}`);
+            }
+        } catch (err) {
+            alert(`Failed to restore payment: ${err.message || err}`);
+        }
+    };
+
+    const handlePaymentDelete = async (id) => {
+        if (!window.confirm("PERMANENTLY delete this payment record? This cannot be undone.")) return;
+        try {
+            const res = await fetch(`${ARCHIVE_PAYMENTS_API}/${id}`, {
+                method: "DELETE",
+                headers: getHeaders(token)
+            });
+            if (res.ok) {
+                setArchivedPayments(prev => prev.filter(p => p.paymentId !== id));
+                alert("Payment permanently deleted.");
+            } else {
+                const errorData = await res.json().catch(() => ({}));
+                alert(`Failed to delete payment: ${errorData.message}`);
+            }
+        } catch (err) {
+            alert("Failed to delete payment.");
         }
     };
 
@@ -211,6 +278,12 @@ function Archive() {
                                                     >
                                                         Unarchive
                                                     </button>
+                                                    <button
+                                                        onClick={() => handleProductDelete(product.productId)}
+                                                        className="bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-1 px-3 rounded shadow transition-colors ml-2"
+                                                    >
+                                                        Delete Permanently
+                                                    </button>
                                                 </td>
                                             </tr>
                                         ))}
@@ -236,6 +309,7 @@ function Archive() {
                                             <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Balance</th>
                                             <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Pay Date</th>
                                             <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Status</th>
+                                            <th className="py-4 px-6 text-center font-semibold text-xs text-gray-500 uppercase tracking-wider">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
@@ -247,6 +321,20 @@ function Archive() {
                                                 <td className="py-4 px-6 text-sm text-gray-700">₱{parseFloat(p.balance || 0).toFixed(2)}</td>
                                                 <td className="py-4 px-6 text-sm text-gray-700">{p.payDate ? new Date(p.payDate).toLocaleString() : "-"}</td>
                                                 <td className="py-4 px-6 text-sm text-gray-700">{p.status}</td>
+                                                <td className="py-4 px-6 text-center">
+                                                    <button
+                                                        onClick={() => handlePaymentUnarchive(p.paymentId)}
+                                                        className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-1 px-3 rounded shadow transition-colors"
+                                                    >
+                                                        Unarchive
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handlePaymentDelete(p.paymentId)}
+                                                        className="bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-1 px-3 rounded shadow transition-colors ml-2"
+                                                    >
+                                                        Delete Permanently
+                                                    </button>
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>

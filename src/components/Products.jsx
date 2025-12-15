@@ -399,7 +399,7 @@ function Products() {
                                 return;
                               }
                               handleDelete(actualProductId);
-                            }} className="text-red-600 hover:text-red-900 font-medium text-sm">Delete</button>
+                            }} className="text-red-600 hover:text-red-900 font-medium text-sm">Archive</button>
                           </div>
                         </td>
                       </tr>
