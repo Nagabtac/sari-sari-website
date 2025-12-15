@@ -195,6 +195,23 @@ function StoreCreditList() {
     fetchStoreCredits();
   };
 
+  const handleArchive = async (id) => {
+    if (!window.confirm("Archive this payment record?")) return;
+
+    const ARCHIVE_API = `${baseUrl}/api/store-credit-list/${id}/archive`;
+    const res = await fetch(ARCHIVE_API, {
+      method: "POST",
+      headers: getHeaders(token)
+    });
+
+    if (!res.ok) {
+      alert("Failed to archive");
+      return;
+    }
+
+    fetchStoreCredits();
+  };
+
   // Calculator Functions
   const handleAddCalcItem = () => {
     if (!selectedProductId) return;
@@ -244,9 +261,17 @@ function StoreCreditList() {
               <h2 className="text-3xl font-bold">Store Credit List</h2>
               <p className="text-gray-600">View all payment records</p>
             </div>
-            <button onClick={openAddModal} className="bg-blue-600 text-white px-6 py-2 rounded-lg shadow">
-              + New Utang
-            </button>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => navigate("/archive", { state: { activeTab: "payments" } })}
+                className="bg-gray-500 text-white px-6 py-2 rounded-lg shadow hover:bg-gray-600 transition-colors"
+              >
+                View Archive
+              </button>
+              <button onClick={openAddModal} className="bg-blue-600 text-white px-6 py-2 rounded-lg shadow">
+                + New Utang
+              </button>
+            </div>
           </div>
 
           {/* TABLE */}
@@ -278,6 +303,8 @@ function StoreCreditList() {
                     <td className="py-4 px-6">{p.status}</td>
                     <td className="py-4 px-6 text-center">
                       <button className="text-indigo-600" onClick={() => openEditModal(p)}>Edit</button>
+                      <span className="mx-2">|</span>
+                      <button className="text-orange-500" onClick={() => handleArchive(p.paymentId)}>Archive</button>
                       <span className="mx-2">|</span>
                       <button className="text-red-600" onClick={() => handleDelete(p.paymentId)}>Delete</button>
                     </td>

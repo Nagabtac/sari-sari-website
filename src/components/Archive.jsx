@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import { useAuth } from "../context/AuthContext";
@@ -15,12 +15,18 @@ const getHeaders = (token) => {
 };
 
 function Archive() {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const { logout, token } = useAuth();
+
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [archivedProducts, setArchivedProducts] = useState([]);
+    const [archivedPayments, setArchivedPayments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const navigate = useNavigate();
-    const { logout, token } = useAuth();
+    const [activeTab, setActiveTab] = useState(location.state?.activeTab || "products");
+
+
 
     // Ensure API_URL doesn't already include /api path
     let baseUrl = API_URL;
@@ -28,7 +34,9 @@ function Archive() {
         baseUrl = baseUrl.split('/api')[0];
     }
     baseUrl = baseUrl.replace(/\/+$/, '');
-    const ARCHIVE_API = `${baseUrl}/api/products/archive`;
+
+    const ARCHIVE_PRODUCTS_API = `${baseUrl}/api/products/archive`;
+    const ARCHIVE_PAYMENTS_API = `${baseUrl}/api/archive/payments`;
 
     const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
@@ -47,15 +55,19 @@ function Archive() {
 
     useEffect(() => {
         if (token) {
-            fetchArchivedProducts();
+            if (activeTab === "products") {
+                fetchArchivedProducts();
+            } else {
+                fetchArchivedPayments();
+            }
         }
-    }, [token]);
+    }, [token, activeTab]);
 
     const fetchArchivedProducts = async () => {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch(ARCHIVE_API, {
+            const res = await fetch(ARCHIVE_PRODUCTS_API, {
                 headers: getHeaders(token)
             });
 
@@ -73,11 +85,26 @@ function Archive() {
         }
     };
 
+    const fetchArchivedPayments = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const res = await fetch(ARCHIVE_PAYMENTS_API, { headers: getHeaders(token) });
+            if (!res.ok) throw new Error("Failed to fetch archived payments");
+            const data = await res.json();
+            setArchivedPayments(Array.isArray(data) ? data : []);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleUnarchive = async (id) => {
         if (!window.confirm("Are you sure you want to restore this product?")) return;
 
         try {
-            const res = await fetch(`${ARCHIVE_API}/${id}/restore`, {
+            const res = await fetch(`${ARCHIVE_PRODUCTS_API}/${id}/restore`, {
                 method: "POST",
                 headers: getHeaders(token)
             });
@@ -118,14 +145,30 @@ function Archive() {
                     {/* Title Section */}
                     <div className="flex justify-between items-center mb-6">
                         <div>
-                            <h2 className="text-3xl font-bold text-gray-800">Product Archive</h2>
-                            <p className="text-gray-600 mt-1">View previously deleted products</p>
+                            <h2 className="text-3xl font-bold text-gray-800">Archive</h2>
+                            <p className="text-gray-600 mt-1">View previously deleted records</p>
                         </div>
                         <button
                             onClick={() => navigate("/products")}
                             className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-all"
                         >
                             Back to Products
+                        </button>
+                    </div>
+
+                    {/* Tabs */}
+                    <div className="flex space-x-4 mb-6 border-b border-gray-200">
+                        <button
+                            className={`pb-2 px-4 ${activeTab === "products" ? "border-b-2 border-blue-600 text-blue-600 font-bold" : "text-gray-500"}`}
+                            onClick={() => setActiveTab("products")}
+                        >
+                            Archived Products
+                        </button>
+                        <button
+                            className={`pb-2 px-4 ${activeTab === "payments" ? "border-b-2 border-blue-600 text-blue-600 font-bold" : "text-gray-500"}`}
+                            onClick={() => setActiveTab("payments")}
+                        >
+                            Archived Payments
                         </button>
                     </div>
 
@@ -141,44 +184,81 @@ function Archive() {
                             <p className="text-red-500 text-lg font-medium mb-2">Error loading archive</p>
                             <p className="text-gray-500 text-sm">{error}</p>
                         </div>
-                    ) : archivedProducts.length > 0 ? (
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                            <table className="min-w-full">
-                                <thead className="bg-gray-50 border-b border-gray-200">
-                                    <tr>
-                                        <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">ID</th>
-                                        <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Product Name</th>
-                                        <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Selling Price</th>
-                                        <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Size</th>
-                                        <th className="py-4 px-6 text-center font-semibold text-xs text-gray-500 uppercase tracking-wider">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100">
-                                    {archivedProducts.map((product) => (
-                                        <tr key={product.productId} className="hover:bg-gray-50 transition-colors">
-                                            <td className="py-4 px-6 text-sm text-gray-900 font-medium">{product.productId}</td>
-                                            <td className="py-4 px-6 text-sm text-gray-700 font-medium">{product.productName}</td>
-                                            <td className="py-4 px-6 text-sm text-gray-700">₱{parseFloat(product.sellingPrice || 0).toFixed(2)}</td>
-                                            <td className="py-4 px-6 text-sm text-gray-700">{product.size || "-"}</td>
-                                            <td className="py-4 px-6 text-center">
-                                                <button
-                                                    onClick={() => handleUnarchive(product.productId)}
-                                                    className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-1 px-3 rounded shadow transition-colors"
-                                                >
-                                                    Unarchive
-                                                </button>
-                                            </td>
+                    ) : (activeTab === "products" ? (
+                        archivedProducts.length > 0 ? (
+                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                <table className="min-w-full">
+                                    <thead className="bg-gray-50 border-b border-gray-200">
+                                        <tr>
+                                            <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">ID</th>
+                                            <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Product Name</th>
+                                            <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Selling Price</th>
+                                            <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Size</th>
+                                            <th className="py-4 px-6 text-center font-semibold text-xs text-gray-500 uppercase tracking-wider">Actions</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {archivedProducts.map((product) => (
+                                            <tr key={product.productId} className="hover:bg-gray-50 transition-colors">
+                                                <td className="py-4 px-6 text-sm text-gray-900 font-medium">{product.productId}</td>
+                                                <td className="py-4 px-6 text-sm text-gray-700 font-medium">{product.productName}</td>
+                                                <td className="py-4 px-6 text-sm text-gray-700">₱{parseFloat(product.sellingPrice || 0).toFixed(2)}</td>
+                                                <td className="py-4 px-6 text-sm text-gray-700">{product.size || "-"}</td>
+                                                <td className="py-4 px-6 text-center">
+                                                    <button
+                                                        onClick={() => handleUnarchive(product.productId)}
+                                                        className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-1 px-3 rounded shadow transition-colors"
+                                                    >
+                                                        Unarchive
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col justify-center items-center h-96 bg-white rounded-xl shadow-sm border border-gray-200">
+                                <div className="text-6xl mb-4">🗄️</div>
+                                <p className="text-gray-500 text-lg font-medium">No archived products found.</p>
+                            </div>
+                        )
                     ) : (
-                        <div className="flex flex-col justify-center items-center h-96 bg-white rounded-xl shadow-sm border border-gray-200">
-                            <div className="text-6xl mb-4">🗄️</div>
-                            <p className="text-gray-500 text-lg font-medium">No archived products found.</p>
-                        </div>
-                    )}
+                        // Payments Table
+                        archivedPayments.length > 0 ? (
+                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                <table className="min-w-full">
+                                    <thead className="bg-gray-50 border-b border-gray-200">
+                                        <tr>
+                                            <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">ID</th>
+                                            <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Customer</th>
+                                            <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Amount</th>
+                                            <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Balance</th>
+                                            <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Pay Date</th>
+                                            <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {archivedPayments.map((p) => (
+                                            <tr key={p.paymentId} className="hover:bg-gray-50 transition-colors">
+                                                <td className="py-4 px-6 text-sm text-gray-900 font-medium">{p.paymentId}</td>
+                                                <td className="py-4 px-6 text-sm text-gray-700 font-medium">{p.customerName || "-"}</td>
+                                                <td className="py-4 px-6 text-sm text-gray-700">₱{parseFloat(p.amount || 0).toFixed(2)}</td>
+                                                <td className="py-4 px-6 text-sm text-gray-700">₱{parseFloat(p.balance || 0).toFixed(2)}</td>
+                                                <td className="py-4 px-6 text-sm text-gray-700">{p.payDate ? new Date(p.payDate).toLocaleString() : "-"}</td>
+                                                <td className="py-4 px-6 text-sm text-gray-700">{p.status}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col justify-center items-center h-96 bg-white rounded-xl shadow-sm border border-gray-200">
+                                <div className="text-6xl mb-4">🗄️</div>
+                                <p className="text-gray-500 text-lg font-medium">No archived payments found.</p>
+                            </div>
+                        )
+                    ))}
                 </main>
             </div>
         </div>
