@@ -30,7 +30,7 @@ function Header({ onSidebarToggle }) {
           <span className="notification-badge">7</span>
         </div>
 
-        <div className="user-avatar">DFC</div>
+        <div className="user-avatar">RC</div>
         <a href="#" className="logout-link" style={{ color: 'black' }}>Logout</a>
       </div>
     </div>
