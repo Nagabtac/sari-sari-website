@@ -1,5 +1,6 @@
 import Sidebar from "./components/Sidebar"
 import Header from "./components/Header"
+
 import { useState } from "react"
 import "./App.css"
 
@@ -9,16 +10,17 @@ const App = () => {
   function toggleSidebar() {
     setSidebarToggle(!sidebarToggle)
   }
+
   const mainContentClass = sidebarToggle ? "main-content" : "main-content full-width";
-  
+
   return (
     <div className="app-container">
-      <Sidebar status={sidebarToggle} /> 
-      
+      <Sidebar status={sidebarToggle} />
+
       <div className={mainContentClass}>
         <Header onSidebarToggle={toggleSidebar} />
-        <div className="content-area">
-          <div className="content-placeholder">Contents here</div>
+        <div className="content-area ">
+          <h1>Main Content</h1>
         </div>
       </div>
     </div>
