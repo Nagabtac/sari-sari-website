@@ -5,6 +5,9 @@ import SignUp from "./components/SignUp";
 import Dashboard from "./components/Dashboard";
 import Products from "./components/Products";
 import Archive from "./components/Archive";
+import Inventory from "./components/Inventory";
+import Transactions from "./components/Transactions";
+import NewTransaction from "./components/NewTransaction";
 import StoreCreditList from "./components/StoreCreditList";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
@@ -57,10 +60,34 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/inventory"
+        element={
+          <ProtectedRoute>
+            <Inventory />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/transactions"
+        element={
+          <ProtectedRoute>
+            <Transactions />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/new-transaction"
+        element={
+          <ProtectedRoute>
+            <NewTransaction />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Catch all - redirect to home */}
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    </Routes >
   );
 }
 

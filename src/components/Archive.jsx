@@ -19,7 +19,7 @@ function Archive() {
     const location = useLocation();
     const { logout, token } = useAuth();
 
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [archivedProducts, setArchivedProducts] = useState([]);
     const [archivedPayments, setArchivedPayments] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -48,6 +48,9 @@ function Archive() {
     const menuItems = [
         { text: "Home", link: "/", icon: "🏠" },
         { text: "Products", link: "/products", icon: "📦" },
+        { text: "Inventory", link: "/inventory", icon: "➕" },
+        { text: "Transactions", link: "/transactions", icon: "🧾" },
+        { text: "New Transaction", link: "/new-transaction", icon: "💰" },
         { text: "Store Credit List", link: "/store-credit-list", icon: "📋" },
         { text: "Archive", link: "/archive", icon: "🗄️" },
         { text: "Logout", link: "/logout", icon: "🚪" },
@@ -260,7 +263,7 @@ function Archive() {
                                             <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">ID</th>
                                             <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Product Name</th>
                                             <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Selling Price</th>
-                                            <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Size</th>
+                                            <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Unit</th>
                                             <th className="py-4 px-6 text-center font-semibold text-xs text-gray-500 uppercase tracking-wider">Actions</th>
                                         </tr>
                                     </thead>
@@ -270,7 +273,7 @@ function Archive() {
                                                 <td className="py-4 px-6 text-sm text-gray-900 font-medium">{product.productId}</td>
                                                 <td className="py-4 px-6 text-sm text-gray-700 font-medium">{product.productName}</td>
                                                 <td className="py-4 px-6 text-sm text-gray-700">₱{parseFloat(product.sellingPrice || 0).toFixed(2)}</td>
-                                                <td className="py-4 px-6 text-sm text-gray-700">{product.size || "-"}</td>
+                                                <td className="py-4 px-6 text-sm text-gray-700">{product.unit || "-"}</td>
                                                 <td className="py-4 px-6 text-center">
                                                     <button
                                                         onClick={() => handleUnarchive(product.productId)}

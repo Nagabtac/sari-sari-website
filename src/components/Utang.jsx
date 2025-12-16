@@ -15,7 +15,7 @@ const getHeaders = (token) => {
 };
 
 function Utang() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
@@ -69,7 +69,7 @@ function Utang() {
     try {
       const amount = parseFloat(formData.amount) || 0;
       const balance = parseFloat(formData.balance) || amount; // Default balance to amount if not specified
-      
+
       const requestData = {
         customer_name: formData.customer_name,
         amount: amount,
@@ -98,9 +98,9 @@ function Utang() {
         if (res.status === 401) {
           throw new Error("Unauthorized. Please log in again.");
         }
-        
+
         let errorMessage = `Failed to create Utang: ${res.status} ${res.statusText}`;
-        
+
         if (isJson) {
           try {
             const errorData = await res.json();
@@ -116,7 +116,7 @@ function Utang() {
             errorMessage = `Server error (${res.status}). The server returned an HTML response instead of JSON. Please check if the backend endpoint is correctly configured.`;
           }
         }
-        
+
         throw new Error(errorMessage);
       }
 
@@ -126,7 +126,7 @@ function Utang() {
         console.log("Utang created successfully:", data);
         setSuccess(true);
         setFormData({ customer_name: "", amount: "", balance: "", method: "", status: "full_balance" });
-        
+
         // Clear success message after 3 seconds
         setTimeout(() => setSuccess(false), 3000);
       } else {
@@ -154,14 +154,13 @@ function Utang() {
       />
 
       <div
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-          isSidebarOpen ? "ml-64" : "ml-0"
-        }`}
+        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${isSidebarOpen ? "ml-64" : "ml-0"
+          }`}
       >
         <Header
           toggleSidebar={toggleSidebar}
           searchValue=""
-          onSearchChange={() => {}}
+          onSearchChange={() => { }}
         />
 
         <main className="flex-1 p-6 overflow-auto">

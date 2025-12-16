@@ -15,7 +15,7 @@ const getHeaders = (token) => {
 };
 
 function StoreCreditList() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -44,6 +44,11 @@ function StoreCreditList() {
   const [calcItems, setCalcItems] = useState([]);
   const [selectedProductId, setSelectedProductId] = useState("");
   const [calcQty, setCalcQty] = useState(1);
+  const [productSearch, setProductSearch] = useState("");
+
+  // Search State
+  const [searchTerm, setSearchTerm] = useState("");
+  const [allPayments, setAllPayments] = useState([]);
 
   // Ensure API_URL doesn't already include /api path
   let baseUrl = API_URL;
@@ -58,6 +63,9 @@ function StoreCreditList() {
   const menuItems = [
     { text: "Home", link: "/", icon: "🏠" },
     { text: "Products", link: "/products", icon: "📦" },
+    { text: "Inventory", link: "/inventory", icon: "➕" },
+    { text: "Transactions", link: "/transactions", icon: "🧾" },
+    { text: "New Transaction", link: "/new-transaction", icon: "💰" },
     { text: "Store Credit List", link: "/store-credit-list", icon: "📋" },
     { text: "Archive", link: "/archive", icon: "🗄️" },
     { text: "Logout", link: "/logout", icon: "🚪" },
@@ -70,6 +78,26 @@ function StoreCreditList() {
     }
   }, [token]);
 
+  // Search Filter Effect
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setPayments(allPayments);
+      return;
+    }
+
+    const filtered = allPayments.filter(p => {
+      const search = searchTerm.toLowerCase();
+      return (
+        (p.customerName || "").toLowerCase().includes(search) ||
+        (p.fname || "").toLowerCase().includes(search) ||
+        (p.lname || "").toLowerCase().includes(search) ||
+        String(p.paymentId || "").includes(search) ||
+        String(p.amount || "").includes(search)
+      );
+    });
+    setPayments(filtered);
+  }, [searchTerm, allPayments]);
+
   const fetchStoreCredits = async () => {
     setLoading(true);
     setError(null);
@@ -79,10 +107,12 @@ function StoreCreditList() {
       const data = await res.json();
 
       const paymentsArray = Array.isArray(data) ? data : data.payments || [];
+      setAllPayments(paymentsArray);
       setPayments(paymentsArray);
     } catch (err) {
       setError(err.message);
       setPayments([]);
+      setAllPayments([]);
     } finally {
       setLoading(false);
     }
@@ -141,6 +171,7 @@ function StoreCreditList() {
     setFormData({ ...initialFormState, amount_date: now });
     setIsEditing(false);
     setCalcItems([]); // Reset calculator
+    setProductSearch(""); // Reset search
     setIsModalOpen(true);
   };
 
@@ -220,7 +251,7 @@ function StoreCreditList() {
 
     const newItem = {
       id: Date.now(),
-      name: `${product.productName} (${product.size || ''})`,
+      name: `${product.productName} (${product.unit || ''})`,
       price: product.sellingPrice,
       qty: parseInt(calcQty),
       subtotal: product.sellingPrice * parseInt(calcQty)
@@ -261,15 +292,24 @@ function StoreCreditList() {
               <h2 className="text-3xl font-bold">Store Credit List</h2>
               <p className="text-gray-600">View all payment records</p>
             </div>
-            <div className="flex space-x-3">
+            <div className="flex space-x-3 items-center">
+              {/* Local Search Bar */}
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search credits..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+                />
+                <span className="absolute left-3 top-2.5 text-gray-400">🔍</span>
+              </div>
+
               <button
                 onClick={() => navigate("/archive", { state: { activeTab: "payments" } })}
                 className="bg-gray-500 text-white px-6 py-2 rounded-lg shadow hover:bg-gray-600 transition-colors"
               >
                 View Archive
-              </button>
-              <button onClick={openAddModal} className="bg-blue-600 text-white px-6 py-2 rounded-lg shadow">
-                + New Utang
               </button>
             </div>
           </div>
@@ -280,7 +320,9 @@ function StoreCreditList() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="py-4 px-6 text-left">Payment ID</th>
-                  <th className="py-4 px-6 text-left">Customer Name</th>
+                  {/* <th className="py-4 px-6 text-left">Customer Name</th> Removed */}
+                  <th className="py-4 px-6 text-left">First Name</th>
+                  <th className="py-4 px-6 text-left">Last Name</th>
                   <th className="py-4 px-6 text-left">Amount</th>
                   <th className="py-4 px-6 text-left">Balance</th>
                   {/* <th className="py-4 px-6 text-left">Amount Date</th>  Removed per request */}
@@ -294,7 +336,9 @@ function StoreCreditList() {
                 {payments.map((p) => (
                   <tr key={p.paymentId} className="hover:bg-blue-50">
                     <td className="py-4 px-6">{p.paymentId}</td>
-                    <td className="py-4 px-6">{p.customerName || "-"}</td>
+                    {/* <td className="py-4 px-6">{p.customerName || "-"}</td> Removed */}
+                    <td className="py-4 px-6">{p.fname || "-"}</td>
+                    <td className="py-4 px-6">{p.lname || "-"}</td>
                     <td className="py-4 px-6">{formatCurrency(p.amount)}</td>
                     <td className="py-4 px-6">{formatCurrency(p.balance)}</td>
                     {/* <td className="py-4 px-6">{formatDate(p.amount_date)}</td> Removed */}
@@ -325,6 +369,18 @@ function StoreCreditList() {
               {!isEditing && (
                 <div className="col-span-2 bg-gray-50 p-4 rounded mb-4 border border-gray-200">
                   <h4 className="font-semibold mb-2 text-gray-700">Product Calculator</h4>
+
+                  {/* Search Input */}
+                  <div className="mb-2">
+                    <input
+                      type="text"
+                      placeholder="Search product..."
+                      className="border p-2 rounded w-full text-sm"
+                      value={productSearch}
+                      onChange={(e) => setProductSearch(e.target.value)}
+                    />
+                  </div>
+
                   <div className="flex gap-2 mb-3">
                     <select
                       className="border p-2 rounded flex-1"
@@ -332,11 +388,13 @@ function StoreCreditList() {
                       onChange={(e) => setSelectedProductId(e.target.value)}
                     >
                       <option value="">Select Product...</option>
-                      {products.map(p => (
-                        <option key={p.productId} value={p.productId}>
-                          {p.productName} ({p.size}) - ₱{p.sellingPrice}
-                        </option>
-                      ))}
+                      {products
+                        .filter(p => p.productName.toLowerCase().includes(productSearch.toLowerCase()))
+                        .map(p => (
+                          <option key={p.productId} value={p.productId}>
+                            {p.productName} ({p.unit}) - ₱{p.sellingPrice}
+                          </option>
+                        ))}
                     </select>
                     <input
                       type="number"

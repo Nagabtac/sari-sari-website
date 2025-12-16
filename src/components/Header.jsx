@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Bell, Search } from "lucide-react"; // Added Search icon for cleaner look
+import { Bell } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { API_URL } from "../config/constants";
 
@@ -126,51 +126,8 @@ function Header({ toggleSidebar, searchValue, onSearchChange, onLogout }) {
       {/* RIGHT SECTION: Search + Bell + Avatar */}
       <div className="flex items-center space-x-6">
 
-        {/* Search Bar Container */}
-        <div className="relative" ref={wrapperRef}>
-          <div className="relative">
-            <input
-              type="text"
-              placeholder={isProductsPage ? "Filter products..." : "Global search..."}
-              value={currentSearchValue}
-              onChange={(e) => handleInputChange(e.target.value)}
-              className="w-64 pl-10 pr-3 py-2 rounded-lg border border-gray-300 shadow-sm 
-              focus:outline-none focus:ring-2 focus:ring-green-700 transition-all"
-            />
-            <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
-          </div>
-
-          {/* Dropdown Results */}
-          {!isProductsPage && isOpen && results.length > 0 && (
-            <div className="absolute top-full left-0 w-full bg-white shadow-lg rounded-lg mt-2 border border-gray-100 overflow-hidden z-50">
-              {results.map(product => (
-                <div
-                  key={product.productId}
-                  onClick={handleResultClick}
-                  className="p-3 hover:bg-gray-50 cursor-pointer border-b last:border-0 transition-colors"
-                >
-                  <p className="font-semibold text-gray-800 text-sm">{product.productName}</p>
-                  <div className="flex justify-between text-xs text-gray-500 mt-1">
-                    <span>{product.size ? product.size : 'No Size'}</span>
-                    <span className="font-medium text-green-600">₱{product.sellingPrice}</span>
-                  </div>
-                </div>
-              ))}
-              <div
-                onClick={() => navigate("/products")}
-                className="p-2 text-center text-xs text-blue-600 font-medium bg-gray-50 cursor-pointer hover:bg-gray-100"
-              >
-                View all results
-              </div>
-            </div>
-          )}
-
-          {!isProductsPage && isOpen && term && results.length === 0 && (
-            <div className="absolute top-full left-0 w-full bg-white shadow-lg rounded-lg mt-2 border border-gray-100 p-3 text-center text-sm text-gray-500 z-50">
-              No products found
-            </div>
-          )}
-        </div>
+        {/* Search Bar Removed */}
+        <div className="flex-1"></div>
 
         {/* Notification Bell */}
         <div className="relative cursor-pointer">

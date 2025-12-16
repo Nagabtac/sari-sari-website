@@ -33,7 +33,7 @@ const getHeaders = (token) => {
 };
 
 function Products() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [products, setProducts] = useState([]);
   const [allProducts, setAllProducts] = useState([]); // Store all products for filtering
   const [loading, setLoading] = useState(true);
@@ -47,7 +47,7 @@ function Products() {
   const [isEditing, setIsEditing] = useState(false);
 
   const initialFormState = {
-    productId: null, productName: "", sellingPrice: "", basePrice: "", quantityInStock: 0, description: "", size: ""
+    productId: null, productName: "", sellingPrice: "", basePrice: "", quantityInStock: 0, description: "", unit: ""
   };
   const [formData, setFormData] = useState(initialFormState);
 
@@ -61,6 +61,9 @@ function Products() {
   const menuItems = [
     { text: "Home", link: "/", icon: "🏠" },
     { text: "Products", link: "/products", icon: "📦" },
+    { text: "Inventory", link: "/inventory", icon: "➕" },
+    { text: "Transactions", link: "/transactions", icon: "🧾" },
+    { text: "New Transaction", link: "/new-transaction", icon: "💰" },
     { text: "Store Credit List", link: "/store-credit-list", icon: "📋" },
     { text: "Archive", link: "/archive", icon: "🗄️" },
     { text: "Logout", link: "/logout", icon: "🚪" },
@@ -108,14 +111,11 @@ function Products() {
     setError(null);
     try {
       console.log("Fetching products from:", PRODUCTS_API);
-      console.log("Using token:", token ? "Yes" : "No");
-
       const res = await fetch(PRODUCTS_API, {
         headers: getHeaders(token)
       });
 
       if (!res.ok) {
-        console.error("API Error:", res.status, res.statusText);
         if (res.status === 401) {
           throw new Error("Unauthorized. Please log in again.");
         }
@@ -123,32 +123,23 @@ function Products() {
       }
 
       const data = await res.json();
-      console.log("Products data received:", data);
 
       // Handle different response formats
-      // If data is an array, use it directly
-      // If data has a products/data property, use that
       const productsArray = Array.isArray(data)
         ? data
         : (data.products || data.data || []);
 
-      console.log("Products array:", productsArray);
-
-      // Debug: Log first product structure if available
-      if (productsArray.length > 0) {
-        console.log("First product structure:", productsArray[0]);
-        console.log("Available keys:", Object.keys(productsArray[0]));
-        console.log("product_id value:", productsArray[0].product_id);
-        console.log("id value:", productsArray[0].id);
-        console.log("All product fields:", JSON.stringify(productsArray[0], null, 2));
-      }
-
       setAllProducts(productsArray); // Store all products
       setProducts(productsArray); // Set initial filtered products
+
+      if (productsArray.length > 0) {
+        console.log("First product data:", productsArray[0]);
+        console.log("Created At check:", productsArray[0].createdAt, productsArray[0].created_at);
+      }
     } catch (err) {
       console.error("Error fetching products:", err);
-      setError(err.message || "Failed to load products. Please check if the API server is running.");
-      setProducts([]); // Set empty array on error
+      setError(err.message || "Failed to load products.");
+      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -159,11 +150,7 @@ function Products() {
     setFormData({ ...formData, [name]: value });
   };
 
-  const openAddModal = () => {
-    setFormData(initialFormState);
-    setIsEditing(false);
-    setIsModalOpen(true);
-  };
+  // Removed openAddModal as adding is done in Inventory now
 
   const openEditModal = (product) => {
     setFormData(product);
@@ -174,81 +161,45 @@ function Products() {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this product?")) return;
     try {
-      console.log("Deleting product with ID:", id, "Type:", typeof id);
       const res = await fetch(`${PRODUCTS_API}/${id}`, {
         method: "DELETE",
         headers: getHeaders(token)
       });
 
-      console.log("Delete response status:", res.status);
-
       if (res.ok) {
-        // Remove from local state immediately for better UX
         setProducts(prevProducts => {
-          const filtered = prevProducts.filter((product) => {
-            // API uses camelCase: productId (not product_id)
-            const productId = product.productId !== undefined && product.productId !== null
-              ? product.productId
-              : (product.product_id !== undefined && product.product_id !== null
-                ? product.product_id
-                : (product.id !== undefined && product.id !== null
-                  ? product.id
-                  : null));
-
-            // Convert both to strings for comparison to handle number/string mismatches
+          return prevProducts.filter(product => {
+            const productId = product.productId || product.product_id || product.id;
             return String(productId) !== String(id);
           });
-          console.log("Products after filter:", filtered);
-          return filtered;
         });
-
-        // Refresh from server to ensure consistency
         setTimeout(() => fetchProducts(), 100);
-      } else if (res.status === 401) {
-        alert("Unauthorized. Please log in again.");
-        logout();
-        navigate("/login");
       } else {
         const errorData = await res.json().catch(() => ({}));
-        console.error("Delete failed:", res.status, errorData);
-
-        // Check for DataIntegrityViolationException (foreign key constraint)
-        const errorMessage = errorData.message || errorData.details || res.statusText || 'Unknown error';
-        let userMessage = `Failed to delete product: ${errorMessage}`;
-
-        if (errorMessage.includes('DataIntegrityViolationException') ||
-          errorMessage.includes('foreign key') ||
-          errorMessage.includes('constraint')) {
-          userMessage = "Cannot delete this product because it is being used in other records (e.g., orders, sales). Please remove all references first.";
-        }
-
-        alert(userMessage);
+        alert(`Failed to delete product: ${errorData.message || res.statusText}`);
       }
     } catch (error) {
       console.error("Error deleting product:", error);
-      alert("Failed to delete product. Please check the console for details.");
+      alert("Failed to delete product.");
     }
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
     const method = isEditing ? "PUT" : "POST";
-    // API uses camelCase productId
     const productId = formData.productId || formData.product_id;
     const url = isEditing ? `${PRODUCTS_API}/${productId}` : PRODUCTS_API;
 
     try {
-      // Convert form data to camelCase format expected by API
       const requestData = {
-        productName: formData.productName || formData.product_name || "",
-        sellingPrice: parseFloat(formData.sellingPrice || formData.selling_price || 0),
-        basePrice: parseFloat(formData.basePrice || formData.base_price || 0),
-        quantityInStock: parseInt(formData.quantityInStock || formData.quantity_in_stock || 0),
-        description: formData.description || "",
-        size: formData.size || ""
+        productName: formData.productName,
+        sellingPrice: parseFloat(formData.sellingPrice),
+        basePrice: parseFloat(formData.basePrice),
+        quantityInStock: parseInt(formData.quantityInStock),
+        description: formData.description,
+        unit: formData.unit
       };
 
-      // Include productId only when editing
       if (isEditing && productId) {
         requestData.productId = productId;
       }
@@ -260,20 +211,15 @@ function Products() {
       });
 
       if (res.ok) {
-        const savedProduct = await res.json();
         setIsModalOpen(false);
-        fetchProducts(); // Refresh the list
-      } else if (res.status === 401) {
-        alert("Unauthorized. Please log in again.");
-        logout();
-        navigate("/login");
+        fetchProducts();
       } else {
         const errorData = await res.json().catch(() => ({}));
-        alert(`Failed to save product: ${errorData.message || res.statusText}`);
+        alert(`Failed to save product: ${errorData.message}`);
       }
     } catch (error) {
       console.error("Error saving product:", error);
-      alert("Failed to save product. Please try again.");
+      alert("Failed to save product.");
     }
   };
 
@@ -293,8 +239,6 @@ function Products() {
       >
         <Header
           toggleSidebar={toggleSidebar}
-          searchValue={searchTerm}
-          onSearchChange={setSearchTerm}
           onLogout={handleLogout}
         />
 
@@ -305,18 +249,24 @@ function Products() {
               <h2 className="text-3xl font-bold text-gray-800">Products</h2>
               <p className="text-gray-600 mt-1">Manage your product inventory</p>
             </div>
-            <div className="flex gap-4">
+            <div className="flex gap-4 items-center">
+              {/* Local Search Bar */}
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+                />
+                <span className="absolute left-3 top-2.5 text-gray-400">🔍</span>
+              </div>
+
               <button
                 onClick={() => navigate("/archive")}
                 className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg flex items-center gap-2 shadow-md transition-all hover:shadow-lg transform hover:-translate-y-0.5"
               >
                 <span className="text-xl leading-none pb-1">🗄️</span> Archive
-              </button>
-              <button
-                onClick={openAddModal}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg flex items-center gap-2 shadow-md transition-all hover:shadow-lg transform hover:-translate-y-0.5"
-              >
-                <span className="text-xl leading-none pb-1">+</span> Add New Product
               </button>
             </div>
           </div>
@@ -346,10 +296,11 @@ function Products() {
                   <tr>
                     <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">ID</th>
                     <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Product Name</th>
-                    <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Size</th>
+                    <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Unit</th>
                     <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Selling Price</th>
                     <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Base Price</th>
                     <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Quantity</th>
+                    <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Created At</th>
                     <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Description</th>
                     <th className="py-4 px-6 text-center font-semibold text-xs text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
@@ -377,15 +328,18 @@ function Products() {
                     const sellingPrice = product.sellingPrice || product.selling_price || 0;
                     const basePrice = product.basePrice || product.base_price || 0;
                     const description = product.description || "-";
+                    const createdAt = product.createdAt || product.created_at || null;
+                    const formattedDate = createdAt ? new Date(createdAt).toLocaleDateString() : "-";
 
                     return (
                       <tr key={actualProductId || index} className="hover:bg-blue-50 transition-colors duration-150">
                         <td className="py-4 px-6 text-sm text-gray-900 font-medium">{displayId}</td>
                         <td className="py-4 px-6 text-sm text-gray-700 font-medium">{productName}</td>
-                        <td className="py-4 px-6 text-sm text-gray-700">{product.size || "-"}</td>
+                        <td className="py-4 px-6 text-sm text-gray-700">{product.unit || "-"}</td>
                         <td className="py-4 px-6 text-sm text-gray-700">₱{parseFloat(sellingPrice || 0).toFixed(2)}</td>
                         <td className="py-4 px-6 text-sm text-gray-700">₱{parseFloat(basePrice || 0).toFixed(2)}</td>
                         <td className="py-4 px-6 text-sm text-gray-700">{quantity}</td>
+                        <td className="py-4 px-6 text-sm text-gray-700">{formattedDate}</td>
                         <td className="py-4 px-6 text-sm text-gray-700">{description}</td>
                         <td className="py-4 px-6 text-center">
                           <div className="flex justify-center space-x-3">
@@ -440,8 +394,8 @@ function Products() {
                 <input name="quantityInStock" type="number" placeholder="0" value={formData.quantityInStock || 0} onChange={handleInputChange} className="border p-2 rounded w-full" required />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Size</label>
-                <input name="size" placeholder="Size" value={formData.size || ""} onChange={handleInputChange} className="border p-2 rounded w-full" required />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
+                <input name="unit" placeholder="Unit" value={formData.unit || ""} onChange={handleInputChange} className="border p-2 rounded w-full" required />
               </div>
               <div className="col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>

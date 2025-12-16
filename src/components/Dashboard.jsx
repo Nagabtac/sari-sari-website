@@ -4,6 +4,7 @@ import Sidebar from "./Sidebar";
 import Header from "./Header";
 import { useAuth } from "../context/AuthContext";
 import { API_URL } from "../config/constants";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 // Helper function to get headers with authentication
 const getHeaders = (token) => {
@@ -15,7 +16,7 @@ const getHeaders = (token) => {
 };
 
 function Dashboard() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [totalProducts, setTotalProducts] = useState(0);
   const [totalSales, setTotalSales] = useState(0);
   const [totalUtang, setTotalUtang] = useState(0);
@@ -26,6 +27,10 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { logout, token } = useAuth();
+  const [salesList, setSalesList] = useState([]);
+  const [productList, setProductList] = useState([]);
+  const [utangList, setUtangList] = useState([]);
+  const [graphData, setGraphData] = useState([]);
 
   // Ensure API_URL doesn't already include /api path
   let baseUrl = API_URL;
@@ -34,7 +39,8 @@ function Dashboard() {
   }
   baseUrl = baseUrl.replace(/\/+$/, '');
   const PRODUCTS_API = `${baseUrl}/api/products`;
-  const SALES_API = `${baseUrl}/api/sales`;
+  // Switch to Transactions API to show real data
+  const TRANSACTIONS_API = `${baseUrl}/api/transactions`;
   const UTANG_API = `${baseUrl}/api/store-credit-list`;
 
   useEffect(() => {
@@ -46,12 +52,72 @@ function Dashboard() {
     }
   }, [token]);
 
+  useEffect(() => {
+    if (salesList.length >= 0 || utangList.length >= 0 || productList.length >= 0) {
+      processGraphData();
+    }
+  }, [salesList, utangList, productList, totalProducts]);
+
   // Return local ISO string format (YYYY-MM-DDTHH:mm:ss) without 'Z' to match backend LocalDateTime
   const nowIso = () => {
     const now = new Date();
     const offsetMs = now.getTimezoneOffset() * 60 * 1000;
     const localTime = new Date(now.getTime() - offsetMs);
     return localTime.toISOString().slice(0, 19);
+  };
+
+  const processGraphData = () => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+    // Initialize array for each day
+    const data = [];
+    for (let i = 1; i <= daysInMonth; i++) {
+      data.push({
+        day: i,
+        date: new Date(currentYear, currentMonth, i).toLocaleDateString(),
+        transactions: 0,
+        utang: 0,
+        products: 0 // Products don't have creation dates usually, keeping flat 0 or steady line
+      });
+    }
+
+    // Populate Sales/Transactions (Blue)
+    salesList.forEach(txn => {
+      const dateStr = txn.transactionDate || txn.transaction_date || txn.saleDate || txn.sale_date;
+      if (!dateStr) return;
+
+      const d = new Date(dateStr);
+      if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+        const day = d.getDate();
+        if (data[day - 1]) {
+          data[day - 1].transactions += 1;
+        }
+      }
+    });
+
+    // Populate Utang (Red)
+    utangList.forEach(u => {
+      // Use amountDate (creation) or fall back to payDate if needed
+      const dateStr = u.amountDate || u.amount_date;
+      if (!dateStr) return;
+
+      const d = new Date(dateStr);
+      if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+        const day = d.getDate();
+        if (data[day - 1]) {
+          data[day - 1].utang += 1;
+        }
+      }
+    });
+
+    // Products (Green) - currently static/flat as we don't fetch product creation dates
+    // If you want a flat line representing total products:
+    data.forEach(d => d.products = totalProducts);
+
+    setGraphData(data);
   };
 
   const fetchTotalProducts = async () => {
@@ -86,6 +152,7 @@ function Dashboard() {
         const data = await res.json();
         // Assuming data is an array of maps/payments
         const list = Array.isArray(data) ? data : (data.payments || []);
+        setUtangList(list);
         setTotalUtang(list.length);
       }
     } catch (err) {
@@ -102,7 +169,7 @@ function Dashboard() {
 
   const fetchSales = async () => {
     try {
-      const res = await fetch(SALES_API, {
+      const res = await fetch(TRANSACTIONS_API, {
         headers: getHeaders(token)
       });
 
@@ -111,6 +178,8 @@ function Dashboard() {
         const salesArray = Array.isArray(data)
           ? data
           : (data.sales || data.data || []);
+
+        setSalesList(salesArray);
 
         // Calculate total sales from all sales records
         const dbTotal = salesArray.reduce((sum, sale) => {
@@ -172,15 +241,19 @@ function Dashboard() {
 
     try {
       const timestamp = nowIso();
+      // Payload matching Transaction.java structure (and TransactionController)
       const requestData = {
         amount: amount,
-        sale_date: timestamp, // for backend expecting snake_case
-        saleDate: timestamp   // for backend expecting camelCase
+        transaction_date: timestamp,
+        transaction_type: "Sale",
+        payment_method: "Cash",
+        status: "COMPLETED",
+        remarks: "Calculator Entry"
       };
 
       console.log("Saving sale to API:", requestData);
 
-      const res = await fetch(SALES_API, {
+      const res = await fetch(TRANSACTIONS_API, {
         method: "POST",
         headers: getHeaders(token),
         body: JSON.stringify(requestData),
@@ -212,13 +285,16 @@ function Dashboard() {
       const timestamp = nowIso();
       const requestData = {
         amount: totalSales,
-        sale_date: timestamp, // for backend expecting snake_case
-        saleDate: timestamp   // for backend expecting camelCase
+        transaction_date: timestamp,
+        transaction_type: "Sale",
+        payment_method: "Cash",
+        status: "COMPLETED",
+        remarks: "Total Sales Save"
       };
 
       console.log("Saving total sales to API:", requestData);
 
-      const res = await fetch(SALES_API, {
+      const res = await fetch(TRANSACTIONS_API, {
         method: "POST",
         headers: getHeaders(token),
         body: JSON.stringify(requestData),
@@ -254,7 +330,7 @@ function Dashboard() {
 
     try {
       // Fetch all sales to get current DB total
-      const res = await fetch(SALES_API, {
+      const res = await fetch(TRANSACTIONS_API, {
         headers: getHeaders(token)
       });
 
@@ -285,6 +361,9 @@ function Dashboard() {
   const menuItems = [
     { text: "Home", link: "/", icon: "🏠" },
     { text: "Products", link: "/products", icon: "📦" },
+    { text: "Inventory", link: "/inventory", icon: "➕" },
+    { text: "Transactions", link: "/transactions", icon: "🧾" },
+    { text: "New Transaction", link: "/new-transaction", icon: "💰" },
     { text: "Store Credit List", link: "/store-credit-list", icon: "📋" },
     { text: "Archive", link: "/archive", icon: "🗄️" },
     { text: "Logout", link: "/logout", icon: "🚪" },
@@ -292,7 +371,6 @@ function Dashboard() {
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden font-sans">
-
       <Sidebar
         menuItems={menuItems}
         isOpen={isSidebarOpen}
@@ -318,7 +396,30 @@ function Dashboard() {
               <p className="text-gray-600 mt-1">Your dashboard</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Statistics Graph */}
+            <div className="mb-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">Monthly Statistics</h3>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={graphData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="day" label={{ value: 'Day', position: 'insideBottomRight', offset: -5 }} />
+                    <YAxis />
+                    <Tooltip labelFormatter={(label) => `Day ${label}`} cursor={{ fill: 'transparent' }} />
+                    <Legend />
+                    {/* Transactions: Blue */}
+                    <Bar dataKey="transactions" name="Transactions" fill="#2563eb" />
+                    {/* Utang: Red */}
+                    <Bar dataKey="utang" name="Utang" fill="#dc2626" />
+                    {/* Products: Green */}
+                    <Bar dataKey="products" name="Products" fill="#16a34a" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Navigation Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div
                 onClick={() => navigate("/products")}
                 className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-shadow"
@@ -326,6 +427,33 @@ function Dashboard() {
                 <div className="text-4xl mb-3">📦</div>
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">Products</h3>
                 <p className="text-gray-600">Manage your product inventory</p>
+              </div>
+
+              <div
+                onClick={() => navigate("/inventory")}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-shadow"
+              >
+                <div className="text-4xl mb-3">➕</div>
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">Inventory</h3>
+                <p className="text-gray-600">Add stock and manage items</p>
+              </div>
+
+              <div
+                onClick={() => navigate("/transactions")}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-shadow"
+              >
+                <div className="text-4xl mb-3">🧾</div>
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">Transactions</h3>
+                <p className="text-gray-600">View transaction history</p>
+              </div>
+
+              <div
+                onClick={() => navigate("/new-transaction")}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-shadow"
+              >
+                <div className="text-4xl mb-3">💰</div>
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">New Transaction</h3>
+                <p className="text-gray-600">Process a new sale</p>
               </div>
 
               <div
@@ -347,8 +475,8 @@ function Dashboard() {
               </div>
             </div>
 
-            {/* Total Products & Total Utang */}
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Total Products, Total Utang & Total Transactions */}
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">Total Products</h3>
                 <p className="text-3xl font-bold text-blue-600">{loading ? "..." : totalProducts}</p>
@@ -356,6 +484,10 @@ function Dashboard() {
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">Total Utang</h3>
                 <p className="text-3xl font-bold text-red-600">{loading ? "..." : totalUtang}</p>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">Total Transactions</h3>
+                <p className="text-3xl font-bold text-purple-600">{loading ? "..." : salesList.length}</p>
               </div>
             </div>
 
@@ -529,4 +661,3 @@ function Dashboard() {
 }
 
 export default Dashboard;
-
