@@ -20,7 +20,7 @@ const App = () => {
       <div className={mainContentClass}>
         <Header onSidebarToggle={toggleSidebar} />
         <div className="content-area ">
-          <h1>Main Content</h1>
+          <h1 style={{ fontSize: '15px' }}>Main Content</h1>
         </div>
       </div>
     </div>
