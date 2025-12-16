@@ -29,8 +29,8 @@ public class ProductDTO {
 
     private String description;
 
-    @NotBlank(message = "Size is required")
-    private String size;
+    @NotBlank(message = "Unit is required")
+    private String unit;
 
     // Getters and Setters
 
@@ -90,11 +90,11 @@ public class ProductDTO {
         this.description = description;
     }
 
-    public String getSize() {
-        return size;
+    public String getUnit() {
+        return unit;
     }
 
-    public void setSize(String size) {
-        this.size = size;
+    public void setUnit(String unit) {
+        this.unit = unit;
     }
 }

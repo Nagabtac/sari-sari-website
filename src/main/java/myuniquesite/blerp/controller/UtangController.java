@@ -91,8 +91,8 @@ public class UtangController {
         Payment payment = new Payment();
         payment.setCustomerId(customer.getCustomerId());
 
-        // Removed amountDate as requested
-        // payment.setAmountDate(LocalDateTime.now());
+        // Set amountDate to now for graph tracking
+        payment.setAmountDate(LocalDateTime.now());
 
         if (request.getPayDate() != null) {
             payment.setPayDate(request.getPayDate());
@@ -165,8 +165,7 @@ public class UtangController {
             item.put("customerId", payment.getCustomerId());
             item.put("amount", payment.getAmount());
             item.put("balance", payment.getBalance());
-            // item.put("amountDate", payment.getAmountDate()); // User asked to remove
-            // amount date from display, but acceptable to send if needed.
+            item.put("amountDate", payment.getAmountDate());
             item.put("payDate", payment.getPayDate());
             item.put("method", payment.getMethod());
             item.put("status", payment.getStatus());

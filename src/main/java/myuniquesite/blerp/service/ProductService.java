@@ -60,7 +60,7 @@ public class ProductService {
             product.setCategoryId(archive.getCategoryId());
             product.setSku(archive.getSku());
             product.setDescription(archive.getDescription());
-            product.setSize(archive.getSize());
+            product.setUnit(archive.getUnit());
 
             productRepository.save(product);
             productArchiveRepository.deleteById(id);

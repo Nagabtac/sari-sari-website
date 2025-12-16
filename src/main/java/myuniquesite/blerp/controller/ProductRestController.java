@@ -84,7 +84,10 @@ public class ProductRestController {
         product.setCategoryId(productDetails.getCategoryId());
         product.setSku(productDetails.getSku());
         product.setDescription(productDetails.getDescription());
-        product.setSize(productDetails.getSize());
+        product.setUnit(productDetails.getUnit());
+
+        // Update createdAt to now as requested
+        product.setCreatedAt(java.time.LocalDateTime.now());
 
         return productService.save(product);
     }

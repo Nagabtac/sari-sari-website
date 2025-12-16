@@ -21,7 +21,7 @@ public class UtangRequest {
     private String status; // Payment status (e.g., "FULL_BALANCE", "PARTIALY", "FULLY_PAID")
 
     @com.fasterxml.jackson.annotation.JsonAlias("pay_date")
-    @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm")
+    @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime payDate; // Payment date
 
     // Getters and Setters

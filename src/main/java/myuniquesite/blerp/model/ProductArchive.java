@@ -31,8 +31,8 @@ public class ProductArchive {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "size", length = 20, nullable = false)
-    private String size;
+    @Column(name = "unit", length = 20, nullable = false)
+    private String unit;
 
     // Constructors
     public ProductArchive() {
@@ -47,7 +47,7 @@ public class ProductArchive {
         this.categoryId = product.getCategoryId();
         this.sku = product.getSku();
         this.description = product.getDescription();
-        this.size = product.getSize();
+        this.unit = product.getUnit();
     }
 
     // Getters and Setters
@@ -116,11 +116,11 @@ public class ProductArchive {
         this.description = description;
     }
 
-    public String getSize() {
-        return size;
+    public String getUnit() {
+        return unit;
     }
 
-    public void setSize(String size) {
-        this.size = size;
+    public void setUnit(String unit) {
+        this.unit = unit;
     }
 }

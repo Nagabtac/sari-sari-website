@@ -6,6 +6,9 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
 @Table(name = "products")
@@ -43,9 +46,13 @@ public class Product {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @NotBlank(message = "Size is required")
-    @Column(name = "size", length = 20)
-    private String size;
+    @Column(name = "unit", length = 20)
+    private String unit;
+
+    @Column(name = "created_at", insertable = false)
+    @JsonProperty("created_at")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime createdAt;
 
     // Getters and Setters
 
@@ -113,11 +120,22 @@ public class Product {
         this.description = description;
     }
 
-    public String getSize() {
-        return size;
+    // ... (rest of getters/setters)
+
+    // Getters and Setters for Unit
+    public String getUnit() {
+        return unit;
     }
 
-    public void setSize(String size) {
-        this.size = size;
+    public void setUnit(String unit) {
+        this.unit = unit;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }
