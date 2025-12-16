@@ -98,6 +98,23 @@ function Transactions() {
         alert("Edit functionality coming soon!");
     };
 
+    const [searchTerm, setSearchTerm] = useState("");
+
+    // --- Filtering ---
+    const filteredSales = sales.filter(txn => {
+        if (!searchTerm) return true;
+        const lowerTerm = searchTerm.toLowerCase();
+        const id = (txn.transactionId || txn.transaction_id || txn.id || "").toString().toLowerCase();
+        const customer = (txn.customerName || txn.customer_name || "").toLowerCase();
+        const type = (txn.transactionType || txn.transaction_type || "").toLowerCase();
+        const method = (txn.paymentMethod || txn.payment_method || "").toLowerCase();
+
+        return id.includes(lowerTerm) ||
+            customer.includes(lowerTerm) ||
+            type.includes(lowerTerm) ||
+            method.includes(lowerTerm);
+    });
+
     return (
         <div className="flex h-screen bg-gray-100 overflow-hidden font-sans">
             <Sidebar menuItems={menuItems} isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} onLogout={handleLogout} />
@@ -111,12 +128,21 @@ function Transactions() {
                             <h2 className="text-3xl font-bold text-gray-800">Transactions</h2>
                             <p className="text-gray-600 mt-1">History of saved transactions</p>
                         </div>
-                        <button
-                            onClick={() => navigate("/new-transaction")}
-                            className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-all hover:shadow-lg"
-                        >
-                            + New Transaction
-                        </button>
+                        <div className="flex gap-4">
+                            <input
+                                type="text"
+                                placeholder="Search transactions..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                            />
+                            <button
+                                onClick={() => navigate("/new-transaction")}
+                                className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-all hover:shadow-lg"
+                            >
+                                + New Transaction
+                            </button>
+                        </div>
                     </div>
 
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -124,8 +150,10 @@ function Transactions() {
                             <div className="p-8 text-center text-gray-500">Loading transactions...</div>
                         ) : error ? (
                             <div className="p-8 text-center text-red-500">{error}</div>
-                        ) : sales.length === 0 ? (
-                            <div className="p-8 text-center text-gray-500">No transactions found.</div>
+                        ) : filteredSales.length === 0 ? (
+                            <div className="p-8 text-center text-gray-500">
+                                {searchTerm ? "No transactions found matching your search." : "No transactions found."}
+                            </div>
                         ) : (
                             <table className="min-w-full">
                                 <thead className="bg-gray-50 border-b">
@@ -142,7 +170,7 @@ function Transactions() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
-                                    {sales.map((txn, idx) => (
+                                    {filteredSales.map((txn, idx) => (
                                         <tr key={idx} className="hover:bg-gray-50">
                                             <td className="py-4 px-6 text-gray-900 font-mono text-sm">#{txn.transactionId || txn.transaction_id || txn.id}</td>
                                             <td className="py-4 px-6 text-gray-800 font-medium">
