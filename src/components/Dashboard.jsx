@@ -113,9 +113,19 @@ function Dashboard() {
       }
     });
 
-    // Products (Green) - currently static/flat as we don't fetch product creation dates
-    // If you want a flat line representing total products:
-    data.forEach(d => d.products = totalProducts);
+    // Products (Green) - Count by creation date
+    productList.forEach(p => {
+      const dateStr = p.created_at || p.createdAt;
+      if (!dateStr) return;
+
+      const d = new Date(dateStr);
+      if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+        const day = d.getDate();
+        if (data[day - 1]) {
+          data[day - 1].products += 1;
+        }
+      }
+    });
 
     setGraphData(data);
   };
@@ -132,6 +142,7 @@ function Dashboard() {
           ? data
           : (data.products || data.data || []);
         setTotalProducts(productsArray.length);
+        setProductList(productsArray);
 
         // Filter for low stock (<= 5)
         const lowStock = productsArray.filter(p => p.quantityInStock <= 5);
