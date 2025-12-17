@@ -376,6 +376,7 @@ function Dashboard() {
     { text: "Transactions", link: "/transactions", icon: "🧾" },
     { text: "New Transaction", link: "/new-transaction", icon: "💰" },
     { text: "Store Credit List", link: "/store-credit-list", icon: "📋" },
+    { text: "Reports", link: "/reports", icon: "📊" },
     { text: "Archive", link: "/archive", icon: "🗄️" },
     { text: "Logout", link: "/logout", icon: "🚪" },
   ];

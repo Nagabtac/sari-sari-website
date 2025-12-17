@@ -9,6 +9,7 @@ import Inventory from "./components/Inventory";
 import Transactions from "./components/Transactions";
 import NewTransaction from "./components/NewTransaction";
 import StoreCreditList from "./components/StoreCreditList";
+import Reports from "./components/Reports";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
 
@@ -57,6 +58,14 @@ function App() {
         element={
           <ProtectedRoute>
             <StoreCreditList />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reports"
+        element={
+          <ProtectedRoute>
+            <Reports />
           </ProtectedRoute>
         }
       />
