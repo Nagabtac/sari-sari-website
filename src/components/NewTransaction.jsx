@@ -37,10 +37,13 @@ function NewTransaction() {
     const [creditForm, setCreditForm] = useState({
         fname: "",
         lname: "",
-        payDate: "",
+        payDate: new Date().toISOString().split('T')[0], // Default to current date
         method: "Cash",
         status: "COMPLETED"
     });
+
+    // Payment Amount for Change Calculation
+    const [customerPayment, setCustomerPayment] = useState("");
 
     const navigate = useNavigate();
     const { logout, token } = useAuth();
@@ -229,7 +232,7 @@ function NewTransaction() {
                     throw new Error(`Failed to save transaction: ${res.status} ${errText}`);
                 }
 
-                alert("Transaction saved!");
+                // alert("Transaction saved!");
                 navigate("/transactions");
             } else {
                 // Store Credit Logic (Utang)
@@ -264,7 +267,7 @@ function NewTransaction() {
 
                 if (!res.ok) throw new Error("Failed to create store credit record");
 
-                alert("Store credit record created!");
+                // alert("Store credit record created!");
                 navigate("/store-credit-list");
             }
         } catch (err) {
@@ -395,6 +398,27 @@ function NewTransaction() {
                                     <span className="text-lg text-gray-600">Total Amount</span>
                                     <span className="text-3xl font-bold text-gray-900">₱{calculateTotal().toFixed(2)}</span>
                                 </div>
+
+                                {/* Payment & Change Calculator */}
+                                <div className="mt-4 bg-blue-50 p-4 rounded-lg border border-blue-100">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-gray-700 font-medium">Payment Amount</span>
+                                        <input
+                                            type="number"
+                                            value={customerPayment}
+                                            onChange={(e) => setCustomerPayment(e.target.value)}
+                                            className="w-32 px-2 py-1 text-right border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+                                            placeholder="0.00"
+                                        />
+                                    </div>
+                                    <div className="flex justify-between items-center pt-2 border-t border-blue-200">
+                                        <span className="text-lg font-bold text-gray-800">Change</span>
+                                        <span className={`text-xl font-bold ${(parseFloat(customerPayment) || 0) - calculateTotal() < 0 ? "text-red-500" : "text-green-600"
+                                            }`}>
+                                            ₱{((parseFloat(customerPayment) || 0) - calculateTotal()).toFixed(2)}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
 
                         </div>
@@ -496,7 +520,7 @@ function NewTransaction() {
                                         </div>
 
                                         <div>
-                                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Expected Payment Date</label>
+                                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Payment Date</label>
                                             <input
                                                 type="date"
                                                 value={creditForm.payDate}
@@ -515,7 +539,7 @@ function NewTransaction() {
                                                 >
                                                     <option value="Cash">Cash</option>
                                                     <option value="Gcash">Gcash</option>
-                                                    <option value="Credit" disabled={transactionType === 'cash'}>Credit</option>
+                                                    <option value="Credit">Credit</option>
                                                 </select>
                                             </div>
                                             <div className="text-right">

@@ -38,6 +38,7 @@ function StoreCreditList() {
     status: "full_balance"
   };
   const [formData, setFormData] = useState(initialFormState);
+  const [paymentCust, setPaymentCust] = useState("");
 
   // Calculator State
   const [products, setProducts] = useState([]);
@@ -146,7 +147,14 @@ function StoreCreditList() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData(prev => {
+      const updated = { ...prev, [name]: value };
+      // Sync amount with balance automatically
+      if (name === "balance") {
+        updated.amount = value;
+      }
+      return updated;
+    });
   };
 
   const openEditModal = (payment) => {
@@ -163,6 +171,8 @@ function StoreCreditList() {
       status: payment.status ? payment.status.toLowerCase() : "full_balance"
     });
     setIsEditing(true);
+    setIsEditing(true);
+    setPaymentCust(""); // Reset payment amount
     setIsModalOpen(true);
   };
 
@@ -172,11 +182,37 @@ function StoreCreditList() {
     setIsEditing(false);
     setCalcItems([]); // Reset calculator
     setProductSearch(""); // Reset search
+    setPaymentCust(""); // Reset payment amount
     setIsModalOpen(true);
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
+
+    // Auto-Archive Logic if payment is sufficient
+    const payAmount = parseFloat(paymentCust) || 0;
+    const currentBalance = parseFloat(formData.amount) || 0;
+
+    if (payAmount >= currentBalance && isEditing) {
+      // Archive directly
+      const ARCHIVE_API = `${baseUrl}/api/store-credit-list/${formData.paymentId}/archive`;
+      try {
+        const res = await fetch(ARCHIVE_API, {
+          method: "POST",
+          headers: getHeaders(token)
+        });
+
+        if (!res.ok) throw new Error("Failed to archive");
+
+        // alert("Payment complete. Record archived.");
+        setIsModalOpen(false);
+        fetchStoreCredits();
+        return; // Stop here, don't do normal save
+      } catch (err) {
+        alert("Failed to archive: " + err.message);
+        return;
+      }
+    }
 
     const API_SAVE = isEditing
       ? `${baseUrl}/api/store-credit-list/${formData.paymentId}`
@@ -323,7 +359,6 @@ function StoreCreditList() {
                   {/* <th className="py-4 px-6 text-left">Customer Name</th> Removed */}
                   <th className="py-4 px-6 text-left">First Name</th>
                   <th className="py-4 px-6 text-left">Last Name</th>
-                  <th className="py-4 px-6 text-left">Amount</th>
                   <th className="py-4 px-6 text-left">Balance</th>
                   {/* <th className="py-4 px-6 text-left">Amount Date</th>  Removed per request */}
                   <th className="py-4 px-6 text-left">Pay Date</th>
@@ -339,7 +374,6 @@ function StoreCreditList() {
                     {/* <td className="py-4 px-6">{p.customerName || "-"}</td> Removed */}
                     <td className="py-4 px-6">{p.fname || "-"}</td>
                     <td className="py-4 px-6">{p.lname || "-"}</td>
-                    <td className="py-4 px-6">{formatCurrency(p.amount)}</td>
                     <td className="py-4 px-6">{formatCurrency(p.balance)}</td>
                     {/* <td className="py-4 px-6">{formatDate(p.amount_date)}</td> Removed */}
                     <td className="py-4 px-6">{formatDate(p.payDate)}</td>
@@ -465,7 +499,7 @@ function StoreCreditList() {
                 />
               </div>
 
-              <div>
+              <div className="hidden" style={{ display: 'none' }}>
                 <label className="block mb-1">Amount</label>
                 <input type="number" name="amount" value={formData.amount} onChange={handleInputChange} className="border p-2 rounded w-full" required />
               </div>
@@ -498,6 +532,33 @@ function StoreCreditList() {
                   <option value="fully_paid">Fully Paid</option>
                 </select>
               </div>
+
+              <div className="col-span-2 bg-blue-50 p-4 rounded mb-4 border border-blue-100">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-gray-700 font-medium">Payment Amount</span>
+                  <input
+                    type="number"
+                    value={paymentCust}
+                    onChange={(e) => setPaymentCust(e.target.value)}
+                    className="w-32 px-2 py-1 text-right border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="0.00"
+                  />
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t border-blue-200">
+                  <span className="text-lg font-bold text-gray-800">Change</span>
+                  <span className={`text-xl font-bold ${(parseFloat(paymentCust) || 0) - (parseFloat(formData.amount) || 0) < 0 ? "text-red-500" : "text-green-600"
+                    }`}>
+                    {formatCurrency((parseFloat(paymentCust) || 0) - (parseFloat(formData.amount) || 0))}
+                  </span>
+                </div>
+              </div>
+
+              {/* Notification for Full Payment */}
+              {(parseFloat(paymentCust) || 0) >= (parseFloat(formData.amount) || 0) && (parseFloat(formData.amount) || 0) > 0 && (
+                <div className="col-span-2 mb-4 p-3 bg-green-100 border border-green-200 rounded text-green-800 text-sm font-medium">
+                  This amount will be suffiecient to pay for the utang and will now be store in the archive
+                </div>
+              )}
 
               <div className="col-span-2 flex justify-end space-x-3">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 bg-gray-300 rounded">Cancel</button>

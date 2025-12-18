@@ -66,7 +66,7 @@ function Inventory() {
             });
 
             if (res.ok) {
-                alert("Product added successfully!");
+                // alert("Product added successfully!");
                 setFormData(initialFormState); // Reset form
             } else if (res.status === 401) {
                 alert("Unauthorized. Please log in again.");

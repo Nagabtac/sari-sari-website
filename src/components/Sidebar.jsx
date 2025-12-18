@@ -11,7 +11,7 @@ function Sidebar({ menuItems, isOpen, toggleSidebar, onLogout }) {
     } else {
       navigate(item.link);
     }
-    toggleSidebar(); // Close sidebar after navigation
+    toggleSidebar();
   };
 
   return (
