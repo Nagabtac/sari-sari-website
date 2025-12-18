@@ -22,6 +22,7 @@ function Archive() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [archivedProducts, setArchivedProducts] = useState([]);
     const [archivedPayments, setArchivedPayments] = useState([]);
+    const [archivedTransactions, setArchivedTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState(location.state?.activeTab || "products");
@@ -37,6 +38,8 @@ function Archive() {
 
     const ARCHIVE_PRODUCTS_API = `${baseUrl}/api/products/archive`;
     const ARCHIVE_PAYMENTS_API = `${baseUrl}/api/archive/payments`;
+    const ARCHIVE_TRANSACTIONS_API = `${baseUrl}/api/transactions/archived`;
+    const TRANSACTIONS_API = `${baseUrl}/api/transactions`;
 
     const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
@@ -60,8 +63,10 @@ function Archive() {
         if (token) {
             if (activeTab === "products") {
                 fetchArchivedProducts();
-            } else {
+            } else if (activeTab === "payments") {
                 fetchArchivedPayments();
+            } else if (activeTab === "transactions") {
+                fetchArchivedTransactions();
             }
         }
     }, [token, activeTab]);
@@ -96,6 +101,24 @@ function Archive() {
             if (!res.ok) throw new Error("Failed to fetch archived payments");
             const data = await res.json();
             setArchivedPayments(Array.isArray(data) ? data : []);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchArchivedTransactions = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const res = await fetch(ARCHIVE_TRANSACTIONS_API, { headers: getHeaders(token) });
+            if (!res.ok) throw new Error("Failed to fetch archived transactions");
+            const data = await res.json();
+            const salesArray = Array.isArray(data) ? data : (data.sales || data.data || []);
+            // Sort by date desc
+            salesArray.sort((a, b) => new Date(b.transactionDate || b.transaction_date) - new Date(a.transactionDate || a.transaction_date));
+            setArchivedTransactions(salesArray);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -191,6 +214,51 @@ function Archive() {
         }
     };
 
+    const handleTransactionUnarchive = async (archiveId) => {
+        if (!window.confirm("Are you sure you want to restore this transaction?")) return;
+
+        try {
+            const res = await fetch(`${TRANSACTIONS_API}/${archiveId}/unarchive`, {
+                method: "POST",
+                headers: getHeaders(token)
+            });
+
+            if (!res.ok) throw new Error("Failed to restore transaction");
+
+            // Remove from UI
+            setArchivedTransactions(prev => prev.filter(txn => {
+                const id = txn.archiveId || txn.archive_id;
+                return id !== archiveId;
+            }));
+            alert("Transaction restored.");
+        } catch (err) {
+            console.error(err);
+            alert("Failed to restore transaction.");
+        }
+    };
+
+    const handleTransactionDelete = async (archiveId) => {
+        if (!window.confirm("Are you sure you want to PERMANENTLY delete this transaction? This action cannot be undone.")) return;
+
+        try {
+            const res = await fetch(`${TRANSACTIONS_API}/archived/${archiveId}`, {
+                method: "DELETE",
+                headers: getHeaders(token)
+            });
+
+            if (!res.ok) throw new Error("Failed to delete transaction");
+
+            setArchivedTransactions(prev => prev.filter(txn => {
+                const id = txn.archiveId || txn.archive_id;
+                return id !== archiveId;
+            }));
+            alert("Transaction deleted permanently.");
+        } catch (err) {
+            console.error(err);
+            alert("Failed to delete transaction.");
+        }
+    };
+
     return (
         <div className="flex h-screen bg-gray-100 overflow-hidden font-sans">
             <Sidebar
@@ -239,6 +307,12 @@ function Archive() {
                             onClick={() => setActiveTab("payments")}
                         >
                             Archived Payments
+                        </button>
+                        <button
+                            className={`pb-2 px-4 ${activeTab === "transactions" ? "border-b-2 border-blue-600 text-blue-600 font-bold" : "text-gray-500"}`}
+                            onClick={() => setActiveTab("transactions")}
+                        >
+                            Archived Transactions
                         </button>
                     </div>
 
@@ -297,6 +371,65 @@ function Archive() {
                             <div className="flex flex-col justify-center items-center h-96 bg-white rounded-xl shadow-sm border border-gray-200">
                                 <div className="text-6xl mb-4">🗄️</div>
                                 <p className="text-gray-500 text-lg font-medium">No archived products found.</p>
+                            </div>
+                        )
+                    ) : activeTab === "transactions" ? (
+                        archivedTransactions.length > 0 ? (
+                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                <table className="min-w-full">
+                                    <thead className="bg-gray-50 border-b border-gray-200">
+                                        <tr>
+                                            <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">ID</th>
+                                            <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Customer</th>
+                                            <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Date</th>
+                                            <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Amount</th>
+                                            <th className="py-4 px-6 text-left font-semibold text-xs text-gray-500 uppercase tracking-wider">Status</th>
+                                            <th className="py-4 px-6 text-center font-semibold text-xs text-gray-500 uppercase tracking-wider">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {archivedTransactions.map((txn) => (
+                                            <tr key={txn.archiveId || txn.archive_id} className="hover:bg-gray-50 transition-colors">
+                                                <td className="py-4 px-6 text-sm text-gray-900 font-medium">#{txn.transactionId || txn.transaction_id}</td>
+                                                <td className="py-4 px-6 text-sm text-gray-800 font-medium">
+                                                    {txn.customerName || txn.customer_name || (txn.customerId ? `Customer #${txn.customerId}` : "Walk-in/Guest")}
+                                                </td>
+                                                <td className="py-4 px-6 text-sm text-gray-700">
+                                                    {new Date(txn.transactionDate || txn.transaction_date).toLocaleString()}
+                                                </td>
+                                                <td className="py-4 px-6 text-sm font-bold text-green-600">
+                                                    ₱{parseFloat(txn.amount).toFixed(2)}
+                                                </td>
+                                                <td className="py-4 px-6">
+                                                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${(txn.status || 'PENDING') === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                                                        (txn.status || 'PENDING') === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'
+                                                        }`}>
+                                                        {txn.status || "PENDING"}
+                                                    </span>
+                                                </td>
+                                                <td className="py-4 px-6 text-center">
+                                                    <button
+                                                        onClick={() => handleTransactionUnarchive(txn.archiveId || txn.archive_id)}
+                                                        className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-1 px-3 rounded shadow transition-colors"
+                                                    >
+                                                        Restore
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleTransactionDelete(txn.archiveId || txn.archive_id)}
+                                                        className="bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-1 px-3 rounded shadow transition-colors ml-2"
+                                                    >
+                                                        Delete Permanently
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col justify-center items-center h-96 bg-white rounded-xl shadow-sm border border-gray-200">
+                                <div className="text-6xl mb-4">🗄️</div>
+                                <p className="text-gray-500 text-lg font-medium">No archived transactions found.</p>
                             </div>
                         )
                     ) : (

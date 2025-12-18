@@ -18,6 +18,7 @@ function Transactions() {
     const [sales, setSales] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [showArchived, setShowArchived] = useState(false); // Toggle for archived view
     const navigate = useNavigate();
     const { logout, token } = useAuth();
 
@@ -45,12 +46,14 @@ function Transactions() {
         if (token) {
             fetchSales();
         }
-    }, [token]);
+    }, [token, showArchived]); // Re-fetch when toggle changes
 
     const fetchSales = async () => {
         setLoading(true);
+        setError(null);
         try {
-            const res = await fetch(SALES_API, { headers: getHeaders(token) });
+            const endpoint = showArchived ? `${SALES_API}/archived` : SALES_API;
+            const res = await fetch(endpoint, { headers: getHeaders(token) });
             if (!res.ok) throw new Error("Failed to fetch transactions");
             const data = await res.json();
             // Supports both array of data or { sales: [] }
@@ -70,7 +73,7 @@ function Transactions() {
 
     // --- Actions ---
     const handleDelete = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this transaction?")) return;
+        if (!window.confirm("Are you sure you want to archive this transaction?")) return;
 
         try {
             const res = await fetch(`${SALES_API}/${id}`, {
@@ -78,17 +81,40 @@ function Transactions() {
                 headers: getHeaders(token)
             });
 
-            if (!res.ok) throw new Error("Failed to delete transaction");
+            if (!res.ok) throw new Error("Failed to archive transaction");
 
             // Remove from UI
             setSales(sales.filter(txn => {
                 const txnId = txn.transactionId || txn.transaction_id || txn.id;
                 return txnId !== id;
             }));
-            alert("Transaction deleted.");
+            alert("Transaction archived.");
         } catch (err) {
             console.error(err);
-            alert("Failed to delete transaction.");
+            alert("Failed to archive transaction.");
+        }
+    };
+
+    const handleUnarchive = async (archiveId) => {
+        if (!window.confirm("Are you sure you want to restore this transaction?")) return;
+
+        try {
+            const res = await fetch(`${SALES_API}/${archiveId}/unarchive`, {
+                method: "POST",
+                headers: getHeaders(token)
+            });
+
+            if (!res.ok) throw new Error("Failed to restore transaction");
+
+            // Remove from UI (since we are in archived view)
+            setSales(sales.filter(txn => {
+                const id = txn.archiveId || txn.archive_id;
+                return id !== archiveId;
+            }));
+            alert("Transaction restored.");
+        } catch (err) {
+            console.error(err);
+            alert("Failed to restore transaction.");
         }
     };
 
@@ -105,7 +131,7 @@ function Transactions() {
     const filteredSales = sales.filter(txn => {
         if (!searchTerm) return true;
         const lowerTerm = searchTerm.toLowerCase();
-        const id = (txn.transactionId || txn.transaction_id || txn.id || "").toString().toLowerCase();
+        const id = ((txn.transactionId || txn.transaction_id || txn.id) || "").toString().toLowerCase();
         const customer = (txn.customerName || txn.customer_name || "").toLowerCase();
         const type = (txn.transactionType || txn.transaction_type || "").toLowerCase();
         const method = (txn.paymentMethod || txn.payment_method || "").toLowerCase();
@@ -126,23 +152,41 @@ function Transactions() {
                 <main className="flex-1 p-6 overflow-auto">
                     <div className="flex justify-between items-center mb-6">
                         <div>
-                            <h2 className="text-3xl font-bold text-gray-800">Transactions</h2>
-                            <p className="text-gray-600 mt-1">History of saved transactions</p>
+                            <h2 className="text-3xl font-bold text-gray-800">
+                                {showArchived ? "Archived Transactions" : "Transactions"}
+                            </h2>
+                            <p className="text-gray-600 mt-1">
+                                {showArchived ? "History of archived transactions" : "History of saved transactions"}
+                            </p>
                         </div>
-                        <div className="flex gap-4">
-                            <input
-                                type="text"
-                                placeholder="Search transactions..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                            />
+                        <div className="flex gap-4 items-center">
                             <button
-                                onClick={() => navigate("/new-transaction")}
-                                className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-all hover:shadow-lg"
+                                onClick={() => setShowArchived(!showArchived)}
+                                className={`font-semibold py-2 px-6 rounded-lg shadow-md transition-all hover:shadow-lg ${showArchived
+                                        ? "bg-gray-600 hover:bg-gray-700 text-white"
+                                        : "bg-gray-200 hover:bg-gray-300 text-gray-800"
+                                    }`}
                             >
-                                + New Transaction
+                                {showArchived ? "Show Active" : "Show Archived"}
                             </button>
+
+                            {!showArchived && (
+                                <>
+                                    <input
+                                        type="text"
+                                        placeholder="Search transactions..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    />
+                                    <button
+                                        onClick={() => navigate("/new-transaction")}
+                                        className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-all hover:shadow-lg"
+                                    >
+                                        + New Transaction
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </div>
 
@@ -201,18 +245,29 @@ function Transactions() {
                                             </td>
                                             <td className="py-4 px-6 text-center">
                                                 <div className="flex justify-center gap-2">
-                                                    <button
-                                                        onClick={() => handleEdit(txn)}
-                                                        className="text-blue-500 hover:text-blue-700 font-medium text-sm border border-blue-200 hover:bg-blue-50 px-3 py-1 rounded transition-colors"
-                                                    >
-                                                        Edit
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDelete(txn.transactionId || txn.transaction_id || txn.id)}
-                                                        className="text-red-500 hover:text-red-700 font-medium text-sm border border-red-200 hover:bg-red-50 px-3 py-1 rounded transition-colors"
-                                                    >
-                                                        Delete
-                                                    </button>
+                                                    {!showArchived ? (
+                                                        <>
+                                                            <button
+                                                                onClick={() => handleEdit(txn)}
+                                                                className="text-blue-500 hover:text-blue-700 font-medium text-sm border border-blue-200 hover:bg-blue-50 px-3 py-1 rounded transition-colors"
+                                                            >
+                                                                Edit
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDelete(txn.transactionId || txn.transaction_id || txn.id)}
+                                                                className="text-red-500 hover:text-red-700 font-medium text-sm border border-red-200 hover:bg-red-50 px-3 py-1 rounded transition-colors"
+                                                            >
+                                                                Archive
+                                                            </button>
+                                                        </>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => handleUnarchive(txn.archiveId || txn.archive_id)}
+                                                            className="text-green-500 hover:text-green-700 font-medium text-sm border border-green-200 hover:bg-green-50 px-3 py-1 rounded transition-colors"
+                                                        >
+                                                            Restore
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
