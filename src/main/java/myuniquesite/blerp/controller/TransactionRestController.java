@@ -97,11 +97,25 @@ public class TransactionRestController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTransaction(@PathVariable Integer id) {
-        transactionService.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Transaction with ID " + id + " not found for delete.",
-                        id.longValue()));
+        // Now calling archive instead of hard delete
+        transactionService.archiveTransaction(id);
+        return ResponseEntity.noContent().build();
+    }
 
-        transactionService.deleteById(id);
+    @GetMapping("/archived")
+    public List<myuniquesite.blerp.model.TransactionArchive> getArchivedTransactions() {
+        return transactionService.findAllArchived();
+    }
+
+    @PostMapping("/{archiveId}/unarchive")
+    public ResponseEntity<Void> unarchiveTransaction(@PathVariable Integer archiveId) {
+        transactionService.unarchiveTransaction(archiveId);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/archived/{archiveId}")
+    public ResponseEntity<Void> deleteArchivedTransaction(@PathVariable Integer archiveId) {
+        transactionService.deleteArchivedTransaction(archiveId);
         return ResponseEntity.noContent().build();
     }
 }
