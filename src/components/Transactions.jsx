@@ -33,7 +33,8 @@ function Transactions() {
     const menuItems = [
         { text: "Home", link: "/", icon: "🏠" },
         { text: "Products", link: "/products", icon: "📦" },
-        { text: "Inventory", link: "/inventory", icon: "➕" },
+        { text: "New Product", link: "/new-product", icon: "➕" },
+        { text: "Stock", link: "/stock", icon: "🔢" },
         { text: "Transactions", link: "/transactions", icon: "🧾" },
         { text: "New Transaction", link: "/new-transaction", icon: "💰" },
         { text: "Store Credit List", link: "/store-credit-list", icon: "📋" },
@@ -163,8 +164,8 @@ function Transactions() {
                             <button
                                 onClick={() => setShowArchived(!showArchived)}
                                 className={`font-semibold py-2 px-6 rounded-lg shadow-md transition-all hover:shadow-lg ${showArchived
-                                        ? "bg-gray-600 hover:bg-gray-700 text-white"
-                                        : "bg-gray-200 hover:bg-gray-300 text-gray-800"
+                                    ? "bg-gray-600 hover:bg-gray-700 text-white"
+                                    : "bg-gray-200 hover:bg-gray-300 text-gray-800"
                                     }`}
                             >
                                 {showArchived ? "Show Active" : "Show Archived"}

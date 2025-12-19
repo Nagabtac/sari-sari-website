@@ -39,7 +39,7 @@ function NewTransaction() {
         lname: "",
         payDate: new Date().toISOString().split('T')[0], // Default to current date
         method: "Cash",
-        status: "COMPLETED"
+        status: "FULL_BALANCE"
     });
 
     // Payment Amount for Change Calculation
@@ -63,10 +63,12 @@ function NewTransaction() {
     const menuItems = [
         { text: "Home", link: "/", icon: "🏠" },
         { text: "Products", link: "/products", icon: "📦" },
-        { text: "Inventory", link: "/inventory", icon: "➕" },
+        { text: "New Product", link: "/new-product", icon: "➕" },
+        { text: "Stock", link: "/stock", icon: "🔢" },
         { text: "Transactions", link: "/transactions", icon: "🧾" },
         { text: "New Transaction", link: "/new-transaction", icon: "💰" },
         { text: "Store Credit List", link: "/store-credit-list", icon: "📋" },
+        { text: "Reports", link: "/reports", icon: "📊" },
         { text: "Archive", link: "/archive", icon: "🗄️" },
         { text: "Logout", link: "/logout", icon: "🚪" },
     ];
@@ -248,12 +250,21 @@ function NewTransaction() {
                     if (parts.length > 1) lname = parts.slice(1).join(" ");
                 }
 
+                // Calculate Balance and Payment
+                const paymentVal = parseFloat(customerPayment) || 0;
+
+                // For FULL_BALANCE, we force balance = total (payment should be 0 ideally, but we enforce balance logic)
+                const isFullBalance = creditForm.status === "FULL_BALANCE";
+                const balanceVal = isFullBalance ? totalAmount : (totalAmount - paymentVal);
+
+                // If Partially Paid, ensure payment is valid? (Validation already handled in button disable)
+
                 const payload = {
                     fname: fname || "Guest",
                     lname: lname || "Customer",
                     customer_name: (fname && lname) ? `${fname} ${lname}` : customerSearch,
                     amount: totalAmount,
-                    balance: totalAmount, // Initial balance = amount
+                    balance: balanceVal,
                     pay_date: creditForm.payDate ? `${creditForm.payDate}T00:00:00` : null,
                     method: "Credit",
                     status: creditForm.status
@@ -285,7 +296,7 @@ function NewTransaction() {
                 <Header toggleSidebar={toggleSidebar} onLogout={handleLogout} />
 
                 <main className="flex-1 p-6 overflow-auto">
-                    <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-6 h-full">
+                    <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-6">
 
                         {/* LEFT COLUMN: Product Selection */}
                         <div className="lg:w-2/3 flex flex-col gap-6">
@@ -350,9 +361,9 @@ function NewTransaction() {
                             </div>
 
                             {/* Cart Table */}
-                            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex-1 overflow-hidden flex flex-col">
+                            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                                 <h2 className="text-xl font-bold text-gray-800 mb-4">Current Order</h2>
-                                <div className="flex-1 overflow-auto">
+                                <div className="overflow-x-auto">
                                     <table className="min-w-full">
                                         <thead className="bg-gray-50 border-b sticky top-0">
                                             <tr>
@@ -407,8 +418,9 @@ function NewTransaction() {
                                             type="number"
                                             value={customerPayment}
                                             onChange={(e) => setCustomerPayment(e.target.value)}
-                                            className="w-32 px-2 py-1 text-right border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+                                            className={`w-32 px-2 py-1 text-right border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none ${transactionType === 'credit' && creditForm.status === 'FULL_BALANCE' ? 'bg-gray-100 cursor-not-allowed text-gray-400' : ''}`}
                                             placeholder="0.00"
+                                            disabled={transactionType === 'credit' && creditForm.status === 'FULL_BALANCE'}
                                         />
                                     </div>
                                     <div className="flex justify-between items-center pt-2 border-t border-blue-200">
@@ -418,6 +430,11 @@ function NewTransaction() {
                                             ₱{((parseFloat(customerPayment) || 0) - calculateTotal()).toFixed(2)}
                                         </span>
                                     </div>
+                                    {transactionType === 'cash' && (parseFloat(customerPayment) || 0) < calculateTotal() && calculateTotal() > 0 && (
+                                        <div className="mt-2 text-red-600 text-sm font-bold text-right">
+                                            Amount not sufficient
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -546,15 +563,22 @@ function NewTransaction() {
                                                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Status</label>
                                                 <select
                                                     value={transactionType === 'cash' ? 'COMPLETED' : (creditForm.status || 'FULL_BALANCE')}
-                                                    onChange={e => setCreditForm({ ...creditForm, status: e.target.value })}
+                                                    onChange={e => {
+                                                        const newStatus = e.target.value;
+                                                        setCreditForm({ ...creditForm, status: newStatus });
+                                                        if (newStatus === "FULL_BALANCE") setCustomerPayment("");
+                                                    }}
                                                     className="w-full border-b-2 border-gray-200 focus:border-blue-500 outline-none py-1 bg-transparent text-right"
                                                     disabled={transactionType === 'cash'} // Cash is always completed
                                                 >
-                                                    <option value="COMPLETED">Completed</option>
-                                                    <option value="PENDING">Pending</option>
-                                                    <option value="FULL_BALANCE">Full Balance</option>
-                                                    <option value="PARTIALLY_PAID">Partially Paid</option>
-                                                    <option value="FULLY_PAID">Fully Paid</option>
+                                                    {transactionType === 'cash' ? (
+                                                        <option value="COMPLETED">Completed</option>
+                                                    ) : (
+                                                        <>
+                                                            <option value="FULL_BALANCE">Full Balance</option>
+                                                            <option value="PARTIALLY_PAID">Partially Paid</option>
+                                                        </>
+                                                    )}
                                                 </select>
                                             </div>
                                         </div>
@@ -563,10 +587,20 @@ function NewTransaction() {
                                     <div className="mt-auto pt-6">
                                         <button
                                             type="submit"
-                                            disabled={loading}
-                                            className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transform transition-all hover:-translate-y-1 ${transactionType === 'cash'
-                                                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200'
-                                                : 'bg-orange-500 hover:bg-orange-600 text-white shadow-orange-200'
+                                            disabled={
+                                                loading ||
+                                                (transactionType === 'cash' && (parseFloat(customerPayment) || 0) < calculateTotal()) ||
+                                                (transactionType === 'credit' && creditForm.status === 'PARTIALLY_PAID' && (parseFloat(customerPayment) || 0) <= 0) ||
+                                                (transactionType === 'credit' && creditForm.status === 'PARTIALLY_PAID' && (parseFloat(customerPayment) || 0) >= calculateTotal())
+                                            }
+                                            className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transform transition-all hover:-translate-y-1 ${loading ||
+                                                (transactionType === 'cash' && (parseFloat(customerPayment) || 0) < calculateTotal()) ||
+                                                (transactionType === 'credit' && creditForm.status === 'PARTIALLY_PAID' && ((parseFloat(customerPayment) || 0) <= 0 || (parseFloat(customerPayment) || 0) >= calculateTotal()))
+                                                ? 'bg-gray-400 cursor-not-allowed shadow-none hover:translate-y-0'
+                                                : transactionType === 'cash'
+                                                    ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200'
+
+                                                    : 'bg-orange-500 hover:bg-orange-600 text-white shadow-orange-200'
                                                 }`}
                                         >
                                             {loading

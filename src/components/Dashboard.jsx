@@ -145,7 +145,7 @@ function Dashboard() {
         setProductList(productsArray);
 
         // Filter for low stock (<= 5)
-        const lowStock = productsArray.filter(p => p.quantityInStock <= 5);
+        const lowStock = productsArray.filter(p => p.quantityInStock <= 10);
         setLowStockProducts(lowStock);
       }
     } catch (err) {
@@ -372,7 +372,8 @@ function Dashboard() {
   const menuItems = [
     { text: "Home", link: "/", icon: "🏠" },
     { text: "Products", link: "/products", icon: "📦" },
-    { text: "Inventory", link: "/inventory", icon: "➕" },
+    { text: "New Product", link: "/new-product", icon: "➕" },
+    { text: "Stock", link: "/stock", icon: "🔢" },
     { text: "Transactions", link: "/transactions", icon: "🧾" },
     { text: "New Transaction", link: "/new-transaction", icon: "💰" },
     { text: "Store Credit List", link: "/store-credit-list", icon: "📋" },
@@ -442,11 +443,11 @@ function Dashboard() {
               </div>
 
               <div
-                onClick={() => navigate("/inventory")}
+                onClick={() => navigate("/new-product")}
                 className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-shadow"
               >
                 <div className="text-4xl mb-3">➕</div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">Inventory</h3>
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">New Product</h3>
                 <p className="text-gray-600">Add stock and manage items</p>
               </div>
 
@@ -526,6 +527,7 @@ function Dashboard() {
                           <th className="py-2 px-3">Product Name</th>
                           <th className="py-2 px-3 text-right">Stock</th>
                           <th className="py-2 px-3 text-right">Status</th>
+                          <th className="py-2 px-3 text-center">Action</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -535,6 +537,14 @@ function Dashboard() {
                             <td className="py-2 px-3 text-right font-bold text-red-600">{p.quantityInStock}</td>
                             <td className="py-2 px-3 text-right">
                               <span className="text-red-600 text-xs bg-red-100 px-2 py-1 rounded-full">Low Stock</span>
+                            </td>
+                            <td className="py-2 px-3 text-center">
+                              <button
+                                onClick={() => navigate('/stock', { state: { highlightId: p.productId } })}
+                                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-1 px-3 rounded transition-colors"
+                              >
+                                Manage
+                              </button>
                             </td>
                           </tr>
                         ))}

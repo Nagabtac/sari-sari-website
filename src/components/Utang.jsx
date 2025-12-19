@@ -48,10 +48,13 @@ function Utang() {
   const menuItems = [
     { text: "Home", link: "/", icon: "🏠" },
     { text: "Products", link: "/products", icon: "📦" },
-    { text: "Utang", link: "/utang", icon: "💳" },
+    { text: "New Product", link: "/new-product", icon: "➕" },
+    { text: "Stock", link: "/stock", icon: "🔢" },
+    { text: "Transactions", link: "/transactions", icon: "🧾" },
+    { text: "New Transaction", link: "/new-transaction", icon: "💰" },
     { text: "Store Credit List", link: "/store-credit-list", icon: "📋" },
-    { text: "Profile", link: "/profile", icon: "👤" },
-    { text: "Settings", link: "/settings", icon: "⚙️" },
+    { text: "Reports", link: "/reports", icon: "📊" },
+    { text: "Archive", link: "/archive", icon: "🗄️" },
     { text: "Logout", link: "/logout", icon: "🚪" },
   ];
 

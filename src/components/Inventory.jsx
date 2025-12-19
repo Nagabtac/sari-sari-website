@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
@@ -18,6 +18,12 @@ function Inventory() {
     const navigate = useNavigate();
     const { logout, token } = useAuth();
     const [loading, setLoading] = useState(false);
+    const [products, setProducts] = useState([]);
+    const [errorMessage, setErrorMessage] = useState("");
+
+    console.log("Rendering Inventory Component");
+    console.log("Token:", token);
+    console.log("API_URL:", API_URL);
 
     // Form State
     const initialFormState = {
@@ -26,10 +32,29 @@ function Inventory() {
     const [formData, setFormData] = useState(initialFormState);
 
     // API URL Setup
-    let baseUrl = API_URL;
-    if (baseUrl.includes('/api/')) baseUrl = baseUrl.split('/api')[0];
-    baseUrl = baseUrl.replace(/\/+$/, '');
+    let baseUrl = API_URL || "http://localhost:8080"; // Fallback to prevent crash
+    if (baseUrl && baseUrl.includes('/api/')) baseUrl = baseUrl.split('/api')[0];
+    if (baseUrl) baseUrl = baseUrl.replace(/\/+$/, '');
     const PRODUCTS_API = `${baseUrl}/api/products`;
+
+    useEffect(() => {
+        if (token) {
+            fetchProducts();
+        }
+    }, [token]);
+
+    const fetchProducts = async () => {
+        try {
+            const res = await fetch(PRODUCTS_API, { headers: getHeaders(token) });
+            if (res.ok) {
+                const data = await res.json();
+                const list = (data && Array.isArray(data)) ? data : (data?.products || []);
+                setProducts(Array.isArray(list) ? list : []);
+            }
+        } catch (err) {
+            console.error("Error fetching products:", err);
+        }
+    };
 
     const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
@@ -41,10 +66,24 @@ function Inventory() {
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
+        if (errorMessage) setErrorMessage(""); // Clear error on type
     };
 
     const handleSave = async (e) => {
         e.preventDefault();
+        setErrorMessage("");
+
+        // Check for duplicate
+        const isDuplicate = products.some(p =>
+            p.productName.toLowerCase() === formData.productName.trim().toLowerCase() &&
+            (p.unit || "").toLowerCase() === (formData.unit || "").trim().toLowerCase()
+        );
+
+        if (isDuplicate) {
+            setErrorMessage("A product with this name and unit already exists.");
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -68,6 +107,7 @@ function Inventory() {
             if (res.ok) {
                 // alert("Product added successfully!");
                 setFormData(initialFormState); // Reset form
+                fetchProducts(); // Refresh list to include new product
             } else if (res.status === 401) {
                 alert("Unauthorized. Please log in again.");
                 logout();
@@ -87,10 +127,12 @@ function Inventory() {
     const menuItems = [
         { text: "Home", link: "/", icon: "🏠" },
         { text: "Products", link: "/products", icon: "📦" },
-        { text: "Inventory", link: "/inventory", icon: "➕" },
+        { text: "New Product", link: "/new-product", icon: "➕" },
+        { text: "Stock", link: "/stock", icon: "🔢" },
         { text: "Transactions", link: "/transactions", icon: "🧾" },
         { text: "New Transaction", link: "/new-transaction", icon: "💰" },
         { text: "Store Credit List", link: "/store-credit-list", icon: "📋" },
+        { text: "Reports", link: "/reports", icon: "📊" },
         { text: "Archive", link: "/archive", icon: "🗄️" },
         { text: "Logout", link: "/logout", icon: "🚪" },
     ];
@@ -115,8 +157,8 @@ function Inventory() {
 
                 <main className="flex-1 p-6 overflow-auto">
                     <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-                        <h2 className="text-3xl font-bold text-gray-800 mb-2">Add New Product</h2>
-                        <p className="text-gray-600 mb-8">Enter details to add a new item to inventory.</p>
+                        <h2 className="text-3xl font-bold text-gray-800 mb-2">New Product</h2>
+                        <p className="text-gray-600 mb-8">Enter details to add a new item.</p>
 
                         <form onSubmit={handleSave} className="space-y-6">
                             <div>
@@ -197,11 +239,17 @@ function Inventory() {
                                 />
                             </div>
 
+                            {errorMessage && (
+                                <div className="text-red-500 text-sm font-semibold bg-red-50 p-3 rounded-lg border border-red-200">
+                                    {errorMessage}
+                                </div>
+                            )}
+
                             <div className="flex justify-end pt-4">
                                 <button
                                     type="submit"
-                                    disabled={loading}
-                                    className={`px-8 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all transform hover:-translate-y-0.5 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                    disabled={loading || errorMessage}
+                                    className={`px-8 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all transform hover:-translate-y-0.5 ${loading || errorMessage ? 'opacity-70 cursor-not-allowed' : ''}`}
                                 >
                                     {loading ? 'Saving...' : 'Add Product'}
                                 </button>

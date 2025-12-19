@@ -20,7 +20,7 @@ function Reports() {
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    
+
     // Custom date range state
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
@@ -39,7 +39,8 @@ function Reports() {
     const menuItems = [
         { text: "Home", link: "/", icon: "🏠" },
         { text: "Products", link: "/products", icon: "📦" },
-        { text: "Inventory", link: "/inventory", icon: "➕" },
+        { text: "New Product", link: "/new-product", icon: "➕" },
+        { text: "Stock", link: "/stock", icon: "🔢" },
         { text: "Transactions", link: "/transactions", icon: "🧾" },
         { text: "New Transaction", link: "/new-transaction", icon: "💰" },
         { text: "Store Credit List", link: "/store-credit-list", icon: "📋" },

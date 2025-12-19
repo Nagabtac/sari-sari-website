@@ -64,10 +64,12 @@ function StoreCreditList() {
   const menuItems = [
     { text: "Home", link: "/", icon: "🏠" },
     { text: "Products", link: "/products", icon: "📦" },
-    { text: "Inventory", link: "/inventory", icon: "➕" },
+    { text: "New Product", link: "/new-product", icon: "➕" },
+    { text: "Stock", link: "/stock", icon: "🔢" },
     { text: "Transactions", link: "/transactions", icon: "🧾" },
     { text: "New Transaction", link: "/new-transaction", icon: "💰" },
     { text: "Store Credit List", link: "/store-credit-list", icon: "📋" },
+    { text: "Reports", link: "/reports", icon: "📊" },
     { text: "Archive", link: "/archive", icon: "🗄️" },
     { text: "Logout", link: "/logout", icon: "🚪" },
   ];
@@ -359,6 +361,7 @@ function StoreCreditList() {
                   {/* <th className="py-4 px-6 text-left">Customer Name</th> Removed */}
                   <th className="py-4 px-6 text-left">First Name</th>
                   <th className="py-4 px-6 text-left">Last Name</th>
+                  <th className="py-4 px-6 text-left">Amount</th>
                   <th className="py-4 px-6 text-left">Balance</th>
                   {/* <th className="py-4 px-6 text-left">Amount Date</th>  Removed per request */}
                   <th className="py-4 px-6 text-left">Pay Date</th>
@@ -374,6 +377,7 @@ function StoreCreditList() {
                     {/* <td className="py-4 px-6">{p.customerName || "-"}</td> Removed */}
                     <td className="py-4 px-6">{p.fname || "-"}</td>
                     <td className="py-4 px-6">{p.lname || "-"}</td>
+                    <td className="py-4 px-6">{formatCurrency(p.amount)}</td>
                     <td className="py-4 px-6">{formatCurrency(p.balance)}</td>
                     {/* <td className="py-4 px-6">{formatDate(p.amount_date)}</td> Removed */}
                     <td className="py-4 px-6">{formatDate(p.payDate)}</td>
